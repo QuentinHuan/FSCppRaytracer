@@ -6,6 +6,7 @@
  */
 
 #include "Utility.hpp"
+
 #include <random>;
 
 Utility::Utility() {
@@ -39,14 +40,6 @@ float Utility::min(std::vector<float> array) {
 	{
 		if(f < r) r = f;
 	}
-	return r;
-}
-
-//generate a random float from -1 to 1 inclusive
-//				!!!!!pretty bad, need a better solution in the long run!!!!!
-float Utility::randomFloat() {
-
-	float r = (static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) ;
 	return r;
 }
 

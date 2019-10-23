@@ -6,8 +6,8 @@
  */
 
 #include "Node.hpp"
-
-
+//___________________
+//Constructors:
 
 Node::Node() {
 	triangles = std::vector<Triangle>();
@@ -53,7 +53,13 @@ Node::Node(std::vector<Triangle> list, Node *father, bool leaf, bool origin, boo
 	treeCenter = center;
 }
 
-//range les triangles de la node parente dans la node fille
+//___________________
+//TreeBuilding:
+/*sort the triangles of the father node into the child node
+ *tris on the direct side of the plane goes into the right child
+ *tris on the indirect into the left child
+ *tris that are overlapping stay in the father node
+ */
 void Node::sort() {
 	std::vector<Triangle> T = std::vector<Triangle>();
 	for(int i=0;i<father->triangles.size();i++)
@@ -77,8 +83,9 @@ void Node::sort() {
 	return;
 }
 
-//test si le triangle est du coté direct ou indirect
-//renvoie 1 pour completement dedans, 0 pour chevauchement, -1 pour dehors
+
+//test which side of the plane a triangle is
+//return 1 for direct side, 0 for overlapping, -1 for indirect side
 int Node::isTriangleInside(Triangle t) {
 	bool bA,bB,bC;
 
@@ -103,7 +110,8 @@ int Node::isTriangleInside(Triangle t) {
 	}
 }
 
-
+//test which side of the plane a point is
+//return true for direct side, 0 for indirect side
 bool Node::isVector3Inside(Vector3 t) {
 
 	if(direct)
@@ -119,6 +127,7 @@ bool Node::isVector3Inside(Vector3 t) {
 
 }
 
+//build the box associated with the node from the parent node's box and the dividing plane
 void Node::addBox(bool direct) {
 	if(!origin)
 	{
@@ -145,17 +154,7 @@ void Node::addBox(bool direct) {
 	}
 }
 
-int Node::getDepth() {
-	if(!origin)
-	{
-		return 1 + father->depth;
-	}
-	else
-	{
-		return 1;
-	}
-}
-
+//add the dividing plane, computed from the parent node
 void Node::addPlane(bool direct) {
 	if(!origin)
 	{
@@ -183,3 +182,14 @@ void Node::addPlane(bool direct) {
 	}
 }
 
+//compute the depth of the node
+int Node::getDepth() {
+	if(!origin)
+	{
+		return 1 + father->depth;
+	}
+	else
+	{
+		return 1;
+	}
+}

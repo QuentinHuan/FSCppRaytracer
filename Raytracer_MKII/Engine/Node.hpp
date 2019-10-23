@@ -12,8 +12,20 @@
 #include <vector>
 #include "Box.hpp"
 
-
 class Node {
+
+private:
+	Vector3 planeOrigin,planeNormal, treeCenter;
+	bool direct;
+	float scale;
+
+	int getDepth();
+	void addRChild(Node *n);
+	void addLChild(Node *n);
+	void addPlane(bool direct);
+	void addBox(bool direct);
+	int isTriangleInside(Triangle t);
+	bool isVector3Inside(Vector3 t);
 
 public:
 
@@ -22,27 +34,20 @@ public:
 	Node(std::vector<Triangle> list, Node *father, bool leaf, bool origin, bool direct, float scale, Vector3 center);
 
 	int depth;
-
-
-
 	Node *rChild,*lChild;
 	Node *father;
 	bool leaf, origin;
-	Vector3 planeOrigin,planeNormal, treeCenter;
 	Box box;
 
 	std::vector<Triangle> triangles;
-	void sort();
-	int isTriangleInside(Triangle t);
-	bool isVector3Inside(Vector3 t);
 
-	void addRChild(Node *n);
-	void addLChild(Node *n);
-	void addPlane(bool direct);
-	void addBox(bool direct);
-	float scale;
-	bool direct;
-	int getDepth();
+	void sort();
+
+
+
+
+
+
 
 
 

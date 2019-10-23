@@ -11,12 +11,13 @@
 #include "Object.hpp"
 #include "Image.hpp"
 #include "Camera.hpp"
-#include "Engine.hpp"
 #include "Color.hpp"
 #include "Material.hpp"
-#include "Statistics.hpp"
-#include "BSP.hpp"
 #include <ctime>
+
+#include "BSP.hpp"
+#include "Engine.hpp"
+#include "Statistics.hpp"
 using namespace std;
 
 int resX = 128, resY=resX;
@@ -119,7 +120,7 @@ int main() {
 	statCounter.runtime = t.elapsed();
 
 	imgFinal.exportPPM("img.ppm",8);
-	cout << statCounter.toString() << endl;
+	cout << statCounter.toString(false) << endl;
 
 
 

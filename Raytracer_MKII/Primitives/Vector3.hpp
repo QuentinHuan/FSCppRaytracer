@@ -8,8 +8,8 @@
 #ifndef VECTOR3_HPP_
 #define VECTOR3_HPP_
 #include <math.h>
-#include "Utility.hpp"
 #include "Statistics.hpp"
+#include "Utility.hpp"
 
 class Vector3
 {
@@ -28,7 +28,6 @@ public:
 	static float dot(Vector3 u, Vector3 v);
 	static Vector3 cross(Vector3 u, Vector3 v);
 	static float calcNorm(Vector3 v);
-	static Vector3 randDirection();
 
 	Vector3 normalize();
 };

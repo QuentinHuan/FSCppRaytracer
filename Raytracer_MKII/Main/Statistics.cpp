@@ -44,31 +44,28 @@ void Statistics::addCriteriaTime(int id, double timeOfExecution) {
 	criteriaList.at(id).execTime +=  timeOfExecution;
 }
 
-std::string Statistics::toString() {
+std::string Statistics::toString(bool verbose) {
 	std::string s = "-----------------------\n";
 	s += "Statistical report: \n";
 	s += "-----------------------\n\n";
 	s += "runtime = " + std::to_string(runtime) + "s\n\n";
 
-	for(int i=0;i<criteriaList.size();i++)
+	if(verbose)
 	{
-		auto c = criteriaList.at(i);
-		if(i != 0)
+		for(int i=0;i<criteriaList.size();i++)
 		{
-			s += "-----------------------\n";
-			s += c.name + " :\n";
-			s += std::to_string(((float)c.occurence/criteriaList.at(0).occurence)*100.0) + "%\n";
+			auto c = criteriaList.at(i);
+			if(i != 0)
+			{
+				s += "-----------------------\n";
+				s += c.name + " :\n";
+				s += std::to_string(((float)c.occurence/criteriaList.at(0).occurence)*100.0) + "%\n";
+			}
+			else
+			{
+				s += "number ray cast: " + std::to_string(c.occurence) + "\n";
+			}
 		}
-		else
-		{
-			s += "number ray cast: " + std::to_string(c.occurence) + "\n";
-		}
-
-
-
-		//s += "number of execution: " + std::to_string(c.occurence) + "\n";
-		//s += "execution Time: " + std::to_string(c.execTime) + "\n\n";
-
 	}
 
 	return s;

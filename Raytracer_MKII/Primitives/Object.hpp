@@ -13,8 +13,8 @@
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "Utility.hpp"
 #include "Vector3.hpp"
+#include "Utility.hpp"
 
 
 class Object {

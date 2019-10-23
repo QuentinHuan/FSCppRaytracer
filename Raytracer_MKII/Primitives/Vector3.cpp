@@ -81,15 +81,6 @@ float Vector3::calcNorm(Vector3 v) {
 	return sqrt(dot(v,v));
 }
 
-Vector3 Vector3::randDirection() {
-	float r1 = Utility::randomFloat();
-	float r2 = Utility::randomFloat();
-	float r3 = Utility::randomFloat();
-
-
-	return Vector3(r1,r2,r3);
-}
-
 bool Vector3::operator ==(Vector3 v) {
 	if(x == v.x && y == v.y && z == v.z) return true;
 	else return false;

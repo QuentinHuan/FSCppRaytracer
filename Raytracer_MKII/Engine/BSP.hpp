@@ -7,36 +7,38 @@
 #pragma once
 #ifndef BSP_HPP_
 #define BSP_HPP_
-#include"Node.hpp"
 #include "Material.hpp"
 #include "Ray.hpp"
 #include "Box.hpp"
-
-
+#include "Node.hpp"
 
 class BSP {
 
-public:
+
+private:
 	int maxDepth;
 	float scale;
 	Node BSPTree;
 	int counter = 0;
-	std::vector<Triangle> allTriangle, partition;
+	std::vector<Triangle> allTriangle, result;
 	std::vector<Node> nodeList;
+
+
+
 	Node* buildBSPTree(Node *n);
+	bool intersectBox(Ray r, Box b);
+	void getTriangles(Node *n);
+	void getTrianglesHitByRay(Node *n, Ray r);
+public:
+
 	BSP();
 	BSP(int maxDepth, std::vector<Triangle> allTriangle, float scale, Vector3 offset);
 
 
-	std::vector<Triangle> debugPartition();
 
-	bool intersectBox(Ray r, Box b);
-
-	void getTriangles(Node *n);
 
 	std::vector<Triangle> accelerationStructure(Ray r);
-	void getTrianglesHitByRay(Node *n, Ray r);
-
+	std::vector<Triangle> debugPartition();
 };
 
 #endif /* BSP_HPP_ */

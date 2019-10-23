@@ -30,7 +30,7 @@ public:
 
 	void addCriteriaOccurence(int id);
 	void addCriteriaTime(int id, double timeOfExecution);
-	std::string toString();
+	std::string toString(bool verbose);
 
 };
 

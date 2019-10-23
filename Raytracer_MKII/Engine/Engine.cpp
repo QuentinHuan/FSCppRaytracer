@@ -6,6 +6,7 @@
  */
 
 #include "Engine.hpp"
+
 #include "HitInfo.hpp"
 
 
@@ -37,8 +38,8 @@ Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,
 }
 
 //MAIN
-Color Engine::rayTrace(Ray camRay,int pixelIndex) {
-	Color c = computeLightAlongRay(camRay,pixelIndex);
+Color Engine::rayTrace(Ray camRay) {
+	Color c = computeLightAlongRay(camRay);
 
 	if(useCache)
 	{
@@ -57,7 +58,7 @@ Color Engine::rayTrace(Ray camRay,int pixelIndex) {
 //buildIntersectionStructure
 
 //compute all the intersections from camera to the first light hit, bouncing off objects
-std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay,int pixelIndex) {
+std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay) {
 	std::vector<HitInfo> structure;
 	HitInfo hit{};
 	int bounce = 0;
@@ -71,7 +72,7 @@ std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay,int pixelInde
 		{
 			if(useCache)
 			{
-				structure.push_back(camRayCache.at(pixelIndex));
+				//structure.push_back(camRayCache.at(pixelIndex));
 				continue;
 			}
 			else
@@ -124,9 +125,9 @@ std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay,int pixelInde
 //computeLightAlongRay
 
 //compute pixel color from the multiple data gathered by buildIntersectionStructure(...)
-Color Engine::computeLightAlongRay(Ray camRay,int pixelX,int pixelY) {
+Color Engine::computeLightAlongRay(Ray camRay) {
 	//std::vector<HitInfo> structure = buildIntersectionStructure(camRay);
-	std::vector<HitInfo> structure = buildIntersectionStructure(camRay,pixelX,pixelY);
+	std::vector<HitInfo> structure = buildIntersectionStructure(camRay);
 
 	Color output = Color(0,0,0);
 	if(structure.size() > 0 && structure.at(structure.size()-1).r.dir == Vector3(0,0,0))
@@ -344,9 +345,9 @@ bool Engine::intersectTriMoller(Triangle tri, Ray r, HitInfo &hitInfo) {
 
 	// if the determinant is negative the triangle is backfacing
 	// if the determinant is close to 0, the ray misses the triangle
-	if (det < kEpsilon) return false;
+	if (det < selfIntersectionThreshold) return false;
 	// ray and triangle are parallel if det is close to 0
-	if (fabs(det) < kEpsilon) return false;
+	if (fabs(det) < selfIntersectionThreshold) return false;
 
 
 	float invDet = 1.0 / det;
