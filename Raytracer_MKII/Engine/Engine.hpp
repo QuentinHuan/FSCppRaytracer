@@ -26,7 +26,7 @@ private:
 	int maxBounce;
 	bool heuristic = false;
 	bool useAccelerationStructure = true;
-	bool useCache = true;
+	bool useCache = false;
 
 	//random generator
 	std::default_random_engine generator;

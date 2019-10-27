@@ -21,12 +21,12 @@
 using namespace std;
 
 int resX = 128, resY=resX;
-int spp = 1000;
+int spp = 5;
 int maxBounce = 4;
-int maxBSPDepth = 3;
+int maxBSPDepth = 21;
 
 bool debug = 0;
-bool useBSP = 0;
+bool useBSP = 1;
 
 int main() {
 
@@ -39,9 +39,9 @@ int main() {
 
 	//scene Data
 	std::vector<Object> objList;
-	objList.push_back(Object("Cornell box.obj"));
+	//objList.push_back(Object("Cornell box.obj"));
 	//objList.push_back(Object("Furnace.obj"));
-	//objList.push_back(Object("FurnaceHD.obj"));
+	objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
 	sizeObj = objList.at(0).faces.size();
 
@@ -59,8 +59,6 @@ int main() {
 		objList.at(0).faces = tree.debugPartition();
 		useBSP = false;
 	}
-
-
 	sizePartition = objList.at(0).faces.size();
 
 	cout  <<"BSP Building done" << std::endl;
@@ -89,16 +87,10 @@ int main() {
 				Color pixel = Color(0,0,0);
 
 				pixel = pixel + engine.rayTrace(r);
-
 				oneSampleImg.array.at(i*resX+j) = pixel;
-
 			}
 
 			//cout  << i << "/" << resX << std::endl;
-			if(i==170)
-			{
-				cout  << "bug" << std::endl;
-			}
 		}
 
 		for(int i=0;i<resX;i++)
@@ -108,22 +100,16 @@ int main() {
 				imgFinal.array.at(i*resX+j) = ((imgFinal.array.at(i*resX+j)*(n-1.f)) + oneSampleImg.array.at(i*resX+j))*(float)(1.0/(n));
 			}
 		}
+
 		imgFinal.exportPPM("img.ppm",8);
-
-
-
 		cout  << n << "/" << spp <<"spp" << std::endl;
 	}
 	//PLACE HOLDER
 	//--------------------------------------------
 
 	statCounter.runtime = t.elapsed();
-
 	imgFinal.exportPPM("img.ppm",8);
 	cout << statCounter.toString(false) << endl;
-
-
-
 	printf("DONE");
 	return 0;
 }

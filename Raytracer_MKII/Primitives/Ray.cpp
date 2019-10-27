@@ -16,4 +16,8 @@ Ray::Ray() {
 Ray::Ray(Vector3 dir, Vector3 pos) {
 	this->dir = dir;
 	this->pos = pos;
+	invDir = Vector3();
+	invDir.x = 1/dir.x;
+	invDir.y = 1/dir.y;
+	invDir.z = 1/dir.z;
 }

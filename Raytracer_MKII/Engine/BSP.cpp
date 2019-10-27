@@ -66,21 +66,39 @@ Node* BSP::buildBSPTree(Node *n) {
 //for a given ray, return the triangles that may be hit
 std::vector<Triangle> BSP::accelerationStructure(Ray r) {
 	result = std::vector<Triangle>();
+
 	getTrianglesHitByRay(&BSPTree,r);
 	return result;
 }
+
+/*
+ * 			if(distance <= minDistanceFromOrigin)
+			{
+				minDistanceFromOrigin = distance;
+ */
 
 void BSP::getTrianglesHitByRay(Node *n, Ray r) {
 
 	if(n != NULL)
 	{
-		if(intersectBox(r,n->box) && n->triangles.size() != 0) //leaf == true
+		if(n->origin)
 		{
-			for(Triangle t : n->triangles)
+			minDistanceFromOrigin = 1000;
+		}
+		float distance = 0;
+		if(n->box.intersect(r,distance)) //leaf == true
+		{
+			if(distance <= minDistanceFromOrigin)
 			{
-				result.push_back(t);
+				minDistanceFromOrigin = distance;
+				if(n->triangles.size() != 0)
+				{
+					for(Triangle t : n->triangles)
+					{
+						result.push_back(t);
+					}
+				}
 			}
-			//return;
 		}
 		getTrianglesHitByRay(n->rChild,r);
 		getTrianglesHitByRay(n->lChild,r);
@@ -89,44 +107,6 @@ void BSP::getTrianglesHitByRay(Node *n, Ray r) {
 	{
 		return;
 	}
-}
-
-bool BSP::intersectBox(Ray r, Box b)
-{
-	float tmin = (b.min.x - r.pos.x) / r.dir.x;
-	float tmax = (b.max.x - r.pos.x) / r.dir.x;
-
-	if (tmin > tmax) std::swap(tmin, tmax);
-
-	float tymin = (b.min.y - r.pos.y) / r.dir.y;
-	float tymax = (b.max.y - r.pos.y) / r.dir.y;
-
-	if (tymin > tymax) std::swap(tymin, tymax);
-
-	if ((tmin > tymax) || (tymin > tmax))
-		return false;
-
-	if (tymin > tmin)
-		tmin = tymin;
-
-	if (tymax < tmax)
-		tmax = tymax;
-
-	float tzmin = (b.min.z - r.pos.z) / r.dir.z;
-	float tzmax = (b.max.z - r.pos.z) / r.dir.z;
-
-	if (tzmin > tzmax) std::swap(tzmin, tzmax);
-
-	if ((tmin > tzmax) || (tzmin > tmax))
-		return false;
-
-	if (tzmin > tmin)
-		tmin = tzmin;
-
-	if (tzmax < tmax)
-		tmax = tzmax;
-
-	return true;
 }
 
 //___________________

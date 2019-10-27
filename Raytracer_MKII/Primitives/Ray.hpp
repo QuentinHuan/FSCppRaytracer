@@ -12,6 +12,7 @@
 class Ray {
 public:
 	Vector3 dir,pos;
+	Vector3 invDir;
 	Ray();
 	Ray(Vector3 dir, Vector3 pos);
 };

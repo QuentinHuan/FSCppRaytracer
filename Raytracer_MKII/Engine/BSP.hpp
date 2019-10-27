@@ -22,7 +22,7 @@ private:
 	int counter = 0;
 	std::vector<Triangle> allTriangle, result;
 	std::vector<Node> nodeList;
-
+	float minDistanceFromOrigin;
 
 
 	Node* buildBSPTree(Node *n);

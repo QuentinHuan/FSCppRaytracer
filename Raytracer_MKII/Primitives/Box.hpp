@@ -8,12 +8,15 @@
 #ifndef BOX_HPP_
 #define BOX_HPP_
 #include "Vector3.hpp"
+#include "Ray.hpp"
 
 class Box {
 public:
 	Box();
 	Box(Vector3 min,Vector3 max);
-	Vector3 min,max;
+	bool intersect(const Ray &r, float &t);
+
+	Vector3 min,max,center;
 };
 
 #endif /* BOX_HPP_ */
