@@ -26,7 +26,6 @@ private:
 
 
 	Node* buildBSPTree(Node *n);
-	bool intersectBox(Ray r, Box b);
 	void getTriangles(Node *n);
 	void getTrianglesHitByRay(Node *n, Ray r);
 public:

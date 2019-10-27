@@ -35,6 +35,7 @@ Node::Node(Node *father, bool leaf, bool origin, bool direct, float scale) {
 	addPlane(direct);
 	addBox(direct);
 	sort();
+	numberFaces = triangles.size();
 
 }
 

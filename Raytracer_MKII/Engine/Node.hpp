@@ -18,6 +18,7 @@ private:
 	Vector3 planeOrigin,planeNormal, treeCenter;
 	bool direct;
 	float scale;
+	int numberFaces;//DEBUG
 
 	int getDepth();
 	void addRChild(Node *n);

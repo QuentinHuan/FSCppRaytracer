@@ -82,7 +82,6 @@ std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay) {
 		}
 
 		else r = structure.at(structure.size()-1).r;//otherwise, we cast a ray starting from the intersection, in the direction computed during the last iteration
-
 		if(rayCast(r,hit))//hit something:
 		{
 			if(hit.material.emission == true)//it's a light: stop
@@ -211,7 +210,6 @@ bool Engine::intersectObject(Object obj, Ray r, HitInfo &hitInfo) {
 	{
 		obj.faces = accelerationStructure.accelerationStructure(r);
 	}
-
 
 	//fill the vector with the coord of all intersection points (in ray space)
 	for(auto tri : obj.faces)

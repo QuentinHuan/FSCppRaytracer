@@ -23,7 +23,7 @@ using namespace std;
 int resX = 128, resY=resX;
 int spp = 5;
 int maxBounce = 4;
-int maxBSPDepth = 21;
+int maxBSPDepth = 3;
 
 bool debug = 0;
 bool useBSP = 1;
@@ -90,7 +90,7 @@ int main() {
 				oneSampleImg.array.at(i*resX+j) = pixel;
 			}
 
-			//cout  << i << "/" << resX << std::endl;
+			cout  << i << "/" << resX << std::endl;
 		}
 
 		for(int i=0;i<resX;i++)

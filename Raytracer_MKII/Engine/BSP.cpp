@@ -19,7 +19,7 @@ BSP::BSP(int maxDepth, std::vector<Triangle> allTriangle, float scale, Vector3 o
 	this->allTriangle = allTriangle;
 	this->scale = scale;
 
-	Node origin = Node(allTriangle,0,false,true,true,scale,offset);
+	Node origin = Node(allTriangle,NULL,false,true,true,scale,offset);
 	buildBSPTree(&origin);
 
 	BSPTree = origin;//public interface to read the BSP tree
@@ -71,12 +71,6 @@ std::vector<Triangle> BSP::accelerationStructure(Ray r) {
 	return result;
 }
 
-/*
- * 			if(distance <= minDistanceFromOrigin)
-			{
-				minDistanceFromOrigin = distance;
- */
-
 void BSP::getTrianglesHitByRay(Node *n, Ray r) {
 
 	if(n != NULL)
@@ -86,22 +80,21 @@ void BSP::getTrianglesHitByRay(Node *n, Ray r) {
 			minDistanceFromOrigin = 1000;
 		}
 		float distance = 0;
-		if(n->box.intersect(r,distance)) //leaf == true
+		if(n->box.intersect(r,distance) && distance <= minDistanceFromOrigin) //leaf == true
 		{
-			if(distance <= minDistanceFromOrigin)
+			minDistanceFromOrigin = distance;
+			if(n->triangles.size() != 0)
 			{
 				minDistanceFromOrigin = distance;
-				if(n->triangles.size() != 0)
+
+				for(Triangle t : n->triangles)
 				{
-					for(Triangle t : n->triangles)
-					{
-						result.push_back(t);
-					}
+					result.push_back(t);
 				}
 			}
+			getTrianglesHitByRay(n->rChild,r);
+			getTrianglesHitByRay(n->lChild,r);
 		}
-		getTrianglesHitByRay(n->rChild,r);
-		getTrianglesHitByRay(n->lChild,r);
 	}
 	else
 	{
