@@ -24,9 +24,9 @@ private:
 
 	//rendering properties
 	int maxBounce;
-	bool heuristic = false;
-	bool useAccelerationStructure = true;
-	bool useCache = false;
+	bool heuristic;
+	bool useAccelerationStructure ;
+	bool useCache;
 
 	//random generator
 	std::default_random_engine generator;
@@ -43,22 +43,26 @@ private:
 
 
 	//fonctions------------------------------------------------
-	std::vector<HitInfo> buildIntersectionStructure(Ray camRay);
-	Color computeLightAlongRay(Ray camRay);
+	std::vector<HitInfo> buildIntersectionStructure(Ray camRay, HitInfo &cache);
+	void bounceRay(HitInfo hit, Ray r, int bounce, std::vector<HitInfo> &structure);
+	Color computeLightAlongRay(Ray camRay,HitInfo &cache);
 
-	bool rayCast(Ray r, HitInfo & hitInfo);
-	bool intersectObject(Object obj, Ray r, HitInfo &hitInfo);
-	bool intersectTri(Triangle tri, Ray r, HitInfo &hitInfo);
+	HitInfo rayCast(Ray r);
+	HitInfo intersectObject(Object obj, Ray r);
+	HitInfo intersectTri(Triangle tri, Ray r);
 	bool intersectTriMoller(Triangle tri, Ray r, HitInfo &hitInfo);
 	Ray generateShadowRay(Vector3 origin);
 	Vector3 randDirection(Vector3 normal, float angle);
+
+
 
 	BSP accelerationStructure;
 
 public:
 	//fonctions------------------------------------------------
-	Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,int maxBounce,bool useAccelerationStructure);
-	Color rayTrace(Ray camRay);
+	Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,int maxBounce,bool useAccelerationStructure,bool useCache);
+	Color rayTrace(Ray camRay, HitInfo &cache);
+	HitInfo buildCache(Ray r);
 
 };
 

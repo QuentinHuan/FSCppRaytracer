@@ -12,6 +12,7 @@ HitInfo::HitInfo() {
 	this->intersection = 0;
 	this->material = Material();
 	this->normal = Vector3();
+	hitSomething = false;
 }
 
 HitInfo::HitInfo(Ray r, float intersection, Material material, Vector3 normal) {
@@ -19,6 +20,7 @@ HitInfo::HitInfo(Ray r, float intersection, Material material, Vector3 normal) {
 	this->intersection = intersection;
 	this->material = material;
 	this->normal = normal;
+	hitSomething = true;
 }
 
 

@@ -13,7 +13,7 @@
 //-------------------------------
 //Engine Construction
 //-------------------------------
-Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,int maxBounce,bool useAccelerationStructure) {
+Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,int maxBounce,bool useAccelerationStructure,bool useCache) {
 	this->objectList = objectList;
 	generator = std::default_random_engine();
 	distribution = std::uniform_real_distribution<float>(-1.0,1.0);
@@ -21,6 +21,7 @@ Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,
 
 	this->heuristic = heuristic;
 	this->maxBounce = maxBounce;
+	this->useCache = useCache;
 
 	accelerationStructure=bsp;
 	this->useAccelerationStructure = useAccelerationStructure;
@@ -37,15 +38,15 @@ Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,
 	camRayCache = std::vector<HitInfo>();
 }
 
+HitInfo Engine::buildCache(Ray r) {
+
+	return  rayCast(r);
+
+}
+
 //MAIN
-Color Engine::rayTrace(Ray camRay) {
-	Color c = computeLightAlongRay(camRay);
-
-	if(useCache)
-	{
-
-	}
-
+Color Engine::rayTrace(Ray camRay, HitInfo &cache) {
+	Color c = computeLightAlongRay(camRay,cache);
 	return c;
 }
 
@@ -58,7 +59,7 @@ Color Engine::rayTrace(Ray camRay) {
 //buildIntersectionStructure
 
 //compute all the intersections from camera to the first light hit, bouncing off objects
-std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay) {
+std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay, HitInfo &cache) {
 	std::vector<HitInfo> structure;
 	HitInfo hit{};
 	int bounce = 0;
@@ -67,45 +68,33 @@ std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay) {
 	statCounter->addCriteriaOccurence(0);//number of rays from the camera
 	do
 	{
+		//-------------------------
+		//Ray construction
 		Ray r;
-		if(structure.size() == 0)
+		if(structure.size() == 0) //first ray is the ray from the camera
 		{
-			if(useCache)
-			{
-				//structure.push_back(camRayCache.at(pixelIndex));
-				continue;
-			}
-			else
-			{
-				r = camRay; //first ray is the ray from the camera
-			}
+				r = camRay;
+		}
+		else
+		{
+			r = structure.at(structure.size()-1).r;//otherwise, we cast a ray starting from the intersection, in the direction computed during the last iteration
 		}
 
-		else r = structure.at(structure.size()-1).r;//otherwise, we cast a ray starting from the intersection, in the direction computed during the last iteration
-		if(rayCast(r,hit))//hit something:
+		//-------------------------
+		//Intersection Computation
+
+		if(useCache && bounce == 0)//use cache for the camRay (same for each pass)
 		{
-			if(hit.material.emission == true)//it's a light: stop
-			{
-				hit.r = Ray(Vector3(0,0,0),hit.calcIntersectionCoord());
-				structure.push_back(hit);
-				statCounter->addCriteriaOccurence(1);//number of rays hitting a light source
-			}
-			else//otherwise, bounce
-			{
-				if(bounce == maxBounce) statCounter->addCriteriaOccurence(2);//number of rays not finding a light source
-				if(bounce == maxBounce-1 && heuristic)//not hitting anything after n bounces, last chance to hit a light
-				{
-					//the next bounce ray will not be random, but towards a light source
-					Vector3 debug = hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold;
-					hit.r =generateShadowRay(debug);
-					structure.push_back(hit);
-				}
-				else
-				{
-					hit.r = Ray(randDirection(hit.normal,90),hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);//new bounce ray from the intersection point (+ a small offset to prevent self intersecting artifacts)
-					structure.push_back(hit);
-				}
-			}
+			hit = cache;
+		}
+		else
+		{
+			hit = rayCast(r);
+		}
+
+		if(hit.hitSomething)//hit something: bounce the ray
+		{
+			bounceRay(hit,r,bounce,structure);
 			bounce++;
 		}
 		else//hit nothing, stop
@@ -116,17 +105,49 @@ std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay) {
 			statCounter->addCriteriaOccurence(3);
 			return structure;
 		}
+
+
 	}while(hit.material.emission == false && bounce <= maxBounce);
 	return structure;
 }
+
+
+void Engine::bounceRay(HitInfo hit, Ray r, int bounce, std::vector<HitInfo> &structure) {
+
+
+	if(hit.material.emission == true)//it's a light: stop
+	{
+		hit.r = Ray(Vector3(0,0,0),hit.calcIntersectionCoord());
+		structure.push_back(hit);
+		statCounter->addCriteriaOccurence(1);//number of rays hitting a light source
+	}
+	else//otherwise, bounce
+	{
+		if(bounce == maxBounce) statCounter->addCriteriaOccurence(2);//number of rays not finding a light source
+		if(bounce == maxBounce-1 && heuristic)//not hitting anything after n bounces, last chance to hit a light
+		{
+			//the next bounce ray will not be random, but towards a light source
+			Vector3 debug = hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold;
+			hit.r =generateShadowRay(debug);
+			structure.push_back(hit);
+		}
+		else
+		{
+			hit.r = Ray(randDirection(hit.normal,90),hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);//new bounce ray from the intersection point (+ a small offset to prevent self intersecting artifacts)
+			structure.push_back(hit);
+		}
+	}
+	return;
+}
+
 
 //_______________________________
 //computeLightAlongRay
 
 //compute pixel color from the multiple data gathered by buildIntersectionStructure(...)
-Color Engine::computeLightAlongRay(Ray camRay) {
+Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
 	//std::vector<HitInfo> structure = buildIntersectionStructure(camRay);
-	std::vector<HitInfo> structure = buildIntersectionStructure(camRay);
+	std::vector<HitInfo> structure = buildIntersectionStructure(camRay, cache);
 
 	Color output = Color(0,0,0);
 	if(structure.size() > 0 && structure.at(structure.size()-1).r.dir == Vector3(0,0,0))
@@ -160,37 +181,26 @@ Color Engine::computeLightAlongRay(Ray camRay) {
 //perform a ray cast in the scene against all objects
 //return true if the ray hit something
 //all useful info (coord, material ect...) are stored in the HitInfo object provided
-bool Engine::rayCast(Ray r, HitInfo &hitInfo) {
-
-	bool bHit = false;
+HitInfo Engine::rayCast(Ray r) {
 	std::vector<HitInfo> allHit;
-
-
 
 	for(Object o : objectList)
 	{
 
-		HitInfo res(r,0,Material(),Vector3(0,0,0));
-		bool ressult = intersectObject(o,r,res);
-
-		if(ressult)
+		HitInfo hit = intersectObject(o,r);
+		if(hit.hitSomething)
 		{
-			allHit.push_back(res);
-			bHit = true;
+			allHit.push_back(hit);
 		}
 	}
 
-	if(bHit)
+	if(allHit.size() != 0)
 	{
-		//Timer t{};
-		hitInfo = HitInfo::sortForeground(allHit);
-		//statCounter->addCriteriaTime(1,t.elapsed());
-		return true;
+		return HitInfo::sortForeground(allHit);
 	}
 	else
 	{
-
-		return false;
+		return HitInfo();
 	}
 }
 
@@ -202,7 +212,7 @@ bool Engine::rayCast(Ray r, HitInfo &hitInfo) {
 //perform a ray cast against one object
 //return true if the ray hit something
 //all useful info (coord, material ect...) are stored in the HitInfo object provided
-bool Engine::intersectObject(Object obj, Ray r, HitInfo &hitInfo) {
+HitInfo Engine::intersectObject(Object obj, Ray r) {
 	bool result = false;
 	std::vector<HitInfo> allHit;
 
@@ -215,21 +225,19 @@ bool Engine::intersectObject(Object obj, Ray r, HitInfo &hitInfo) {
 	for(auto tri : obj.faces)
 	{
 		HitInfo h{};
-		bool hit = intersectTri(tri,r,h);
-		if(hit)
+		h = intersectTri(tri,r);
+		if(h.hitSomething)
 		{
-			result = true;
 			allHit.push_back(h);
 		}
 	}
-	if(result == true)
+	if(allHit.size() > 0)
 	{
-		hitInfo = HitInfo::sortForeground(allHit);
-		return true;
+		return HitInfo::sortForeground(allHit);
 	}
 	else
 	{
-		return false;
+		return HitInfo();
 	}
 }
 
@@ -265,20 +273,16 @@ Vector3 Engine::randDirection(Vector3 normal, float angle) {
 
 //utility fonction, compute the intersection point of a ray and with a tri
 //output is the coord of the intersection point in ray space
-bool Engine::intersectTri(Triangle tri, Ray r, HitInfo &hitInfo) {
+HitInfo Engine::intersectTri(Triangle tri, Ray r) {
 
 	//Timer t {}; // statistics
-
-	hitInfo.r = r;
-	hitInfo.intersection = 0;
-	hitInfo.material = tri.material;
 
 	Vector3 u,v,k,n,d;
 	u = tri.b - tri.a;
 	v = tri.c - tri.a;
 	k = r.dir;
 	n=Vector3::cross(u,v);
-	hitInfo.normal = tri.normal;
+
 
 	d = r.pos - tri.a;
 
@@ -293,22 +297,21 @@ bool Engine::intersectTri(Triangle tri, Ray r, HitInfo &hitInfo) {
 
 		if(0<=result.x && result.x<=1 && 0<=result.y && result.y<=1 && result.z >= 0 && (result.x + result.y) <= 1)
 		{
-			hitInfo.intersection = result.z;
 			//statCounter->addCriteriaTime(0,t.elapsed());
-			return true;
+			return HitInfo(r,result.z,tri.material,tri.normal);
 		}
 		//not in the triangle
 		else
 		{
 			//statCounter->addCriteriaTime(0,t.elapsed());
-			return false;
+			return HitInfo();
 		}
 	}
 	//don't intersect with plane
 	else
 	{
 		//statCounter->addCriteriaTime(0,t.elapsed());
-		return false;
+		return HitInfo();
 	}
 }
 

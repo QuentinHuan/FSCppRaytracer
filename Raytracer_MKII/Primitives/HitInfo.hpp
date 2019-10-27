@@ -14,6 +14,7 @@
 class HitInfo {
 public:
 	float intersection;
+	bool hitSomething;
 	Ray r;
 	Vector3 normal;
 	Material material;

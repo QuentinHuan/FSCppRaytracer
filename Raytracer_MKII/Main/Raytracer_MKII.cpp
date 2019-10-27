@@ -20,13 +20,14 @@
 #include "Statistics.hpp"
 using namespace std;
 
-int resX = 128, resY=resX;
-int spp = 5;
+int resX = 256, resY=resX;
+int spp = 10;
 int maxBounce = 4;
-int maxBSPDepth = 3;
+int maxBSPDepth = 9;
 
 bool debug = 0;
-bool useBSP = 1;
+bool useBSP = 0;
+bool useCache = 0;
 
 int main() {
 
@@ -39,9 +40,9 @@ int main() {
 
 	//scene Data
 	std::vector<Object> objList;
-	//objList.push_back(Object("Cornell box.obj"));
+	objList.push_back(Object("Cornell box.obj"));
 	//objList.push_back(Object("Furnace.obj"));
-	objList.push_back(Object("FurnaceHD.obj"));
+	//objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
 	sizeObj = objList.at(0).faces.size();
 
@@ -67,30 +68,57 @@ int main() {
 	Image oneSampleImg(resX,resY);
 	Image imgFinal(resX,resY);
 	Statistics statCounter{};
-	Engine engine(objList, statCounter,tree,maxBounce,useBSP);
+	Engine engine(objList, statCounter,tree,maxBounce,useBSP,useCache);
+
+	vector<HitInfo> cache;
+
 
 	//--------------------------------------------
-	//PLACE HOLDER
+	//Main Loop
 
-	for(int n=1;n<=spp;n++)
+	//cache building:
+
+
+
+	//for each pixel
+
+	for(int i=0;i<resX;i++)
 	{
+		for(int j=0;j<resY;j++)
+		{
+			Ray r = cam.camRay(i,j);
+			if(useCache)
+			{
+				cache.push_back(engine.buildCache(r));
+			}
+			else
+			{
+				cache.push_back(HitInfo());
+			}
+
+		}
+		//cout  << i << "/" << resX << std::endl;
+	}
+	cout  <<"Cache Building done" << std::endl;
+
+
+
+	for(int n=1;n<=spp;n++)//for each sample
+	{
+		//for each pixel
 		for(int i=0;i<resX;i++)
 		{
 			for(int j=0;j<resY;j++)
 			{
-				if(i == resX/2)
-				{
-
-				}
+				int pixelIndex = i*resX+j;
 				Ray r = cam.camRay(i,j);
-				HitInfo hit{};
 				Color pixel = Color(0,0,0);
 
-				pixel = pixel + engine.rayTrace(r);
-				oneSampleImg.array.at(i*resX+j) = pixel;
+				pixel = pixel + engine.rayTrace(r, cache.at(pixelIndex));
+				oneSampleImg.array.at(pixelIndex) = pixel;
 			}
 
-			cout  << i << "/" << resX << std::endl;
+			//cout  << i << "/" << resX << std::endl;
 		}
 
 		for(int i=0;i<resX;i++)
