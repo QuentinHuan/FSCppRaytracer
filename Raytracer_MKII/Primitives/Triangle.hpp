@@ -9,6 +9,7 @@
 #define TRIANGLE_HPP_
 #include "Material.hpp"
 #include "Vector3.hpp"
+#include "HitInfo.hpp"
 
 
 class Triangle {
@@ -18,6 +19,10 @@ public:
 	Triangle();
 	Triangle(Vector3 a,Vector3 b,Vector3 c, Material material);
 	Triangle(Vector3 a,Vector3 b,Vector3 c,Vector3 normal, Material material);
+
+
+	HitInfo intersect(Ray &r);
+	HitInfo intersectMoller(Ray &r);
 
 	Vector3 calcNormal();
 	Vector3 calcCenter();

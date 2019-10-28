@@ -16,7 +16,7 @@
 Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,int maxBounce,bool useAccelerationStructure,bool useCache) {
 	this->objectList = objectList;
 	generator = std::default_random_engine();
-	distribution = std::uniform_real_distribution<float>(-1.0,1.0);
+	distribution = std::uniform_real_distribution<float>(0,1.0);
 	this->statCounter = &statCounter;
 
 	this->heuristic = heuristic;
@@ -100,7 +100,7 @@ std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay, HitInfo &cac
 		else//hit nothing, stop
 		{
 			hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
-			hit.material = Material(Color(1,1,1),true,1);
+			hit.material = Material(Color(1,1,1),true,1.0);
 			structure.push_back(hit);
 			statCounter->addCriteriaOccurence(3);
 			return structure;
@@ -133,7 +133,7 @@ void Engine::bounceRay(HitInfo hit, Ray r, int bounce, std::vector<HitInfo> &str
 		}
 		else
 		{
-			hit.r = Ray(randDirection(hit.normal,90),hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);//new bounce ray from the intersection point (+ a small offset to prevent self intersecting artifacts)
+			hit.r = Ray(importanceSampling(hit.normal),hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);//new bounce ray from the intersection point (+ a small offset to prevent self intersecting artifacts)
 			structure.push_back(hit);
 		}
 	}
@@ -155,13 +155,14 @@ Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
 		for(int i =structure.size()-1; i>=0; i--)//we travel across the structure backward
 		{
 			//last ray hit a light
-			if(i==structure.size()-1) output = structure.at(i).material.diffuse * structure.at(i).material.emissionPower;
+			if(i==structure.size()-1) output = structure.at(i).material.diffuse*structure.at(i).material.emissionPower;
 
 			else//at each bounce, the light intensity is absorbed (material dependent)
 			{
-				Vector3 v = structure.at(i).normal.normalize();
-				float lambert = Vector3::dot(v,structure.at(i).r.dir.normalize());//Absorption coef
-				output = output*structure.at(i).material.diffuse*abs(lambert) *2.0;
+				//Vector3 v = structure.at(i).normal.normalize();
+				//float lambert = Vector3::dot(v,structure.at(i).r.dir.normalize());//Absorption coef
+				//output = output*structure.at(i).material.diffuse*abs(lambert) *2.0; //uniform distrib
+				output = output*structure.at(i).material.diffuse; //cosinus distrib
 				//output = structure.at(i).material.diffuse;
 			}
 		}
@@ -213,7 +214,6 @@ HitInfo Engine::rayCast(Ray r) {
 //return true if the ray hit something
 //all useful info (coord, material ect...) are stored in the HitInfo object provided
 HitInfo Engine::intersectObject(Object obj, Ray r) {
-	bool result = false;
 	std::vector<HitInfo> allHit;
 
 	if(useAccelerationStructure)
@@ -225,7 +225,7 @@ HitInfo Engine::intersectObject(Object obj, Ray r) {
 	for(auto tri : obj.faces)
 	{
 		HitInfo h{};
-		h = intersectTri(tri,r);
+		h = tri.intersect(r);
 		if(h.hitSomething)
 		{
 			allHit.push_back(h);
@@ -242,78 +242,33 @@ HitInfo Engine::intersectObject(Object obj, Ray r) {
 }
 
 //___________________
-//randDirection
+//importanceSampling
 
-Vector3 Engine::randDirection(Vector3 normal, float angle) {
+Vector3 Engine::importanceSampling(Vector3 normal) {
 
-	float r1 = distribution(generator);
-	float r2 = distribution(generator);
-	float r3 = distribution(generator);
-	Vector3 v = Vector3(r1,r2,r3).normalize();
+	float u = distribution(generator);
+	float theta = distribution(generator);
 
-	float deg2Rad = 3.14/180.0;
 
-	//float currentAngle = std::atan2( Vector3::calcNorm(Vector3::cross(v,normal)), Vector3::dot(v,normal))*180/3.14;
-	float currentAngle = Vector3::dot(normal,v);
-	while(currentAngle < 0)
-	{
+	float Phi = std::asin(std::pow(u,0.5));//distribution: change pow to get various cos^n distrib over the sphere (pow=1 means uniform)
 
-		float r1 = distribution(generator);
-		float r2 = distribution(generator);
-		float r3 = distribution(generator);
-		v = Vector3(r1,r2,r3).normalize();
-		//currentAngle = std::atan2( Vector3::calcNorm(Vector3::cross(v,normal)), Vector3::dot(v,normal))*180/3.14;
-		currentAngle = Vector3::dot(normal,v);
-	}
-	return v;
+
+	Vector3 localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi) );
+
+	Vector3 Z = normal;
+	Vector3 X;
+	Vector3 Y;
+
+	if(Z.y != 0) Y = Vector3(Z.y,-(Z.x + Z.z),Z.y);
+	else  Y = Vector3(Z.z,0,-Z.x);
+
+	X = Vector3::cross(Y,Z);
+	Vector3 worldV =  X*localV.x + Y*localV.y + Z*localV.z;
+
+	return worldV;
 }
 
-//___________________
-//intersectTri
 
-//utility fonction, compute the intersection point of a ray and with a tri
-//output is the coord of the intersection point in ray space
-HitInfo Engine::intersectTri(Triangle tri, Ray r) {
-
-	//Timer t {}; // statistics
-
-	Vector3 u,v,k,n,d;
-	u = tri.b - tri.a;
-	v = tri.c - tri.a;
-	k = r.dir;
-	n=Vector3::cross(u,v);
-
-
-	d = r.pos - tri.a;
-
-	Vector3 result(0,0,0);//resulting intersection, in base (u,v,k)
-	float denominator = Vector3::dot(n,k);
-	if(denominator != 0)
-	{
-		float invDen = 1/denominator;
-		result.x = Vector3::dot(Vector3::cross(d,v),k)*invDen;
-		result.y = Vector3::dot(Vector3::cross(u,d),k)*invDen;
-		result.z = -Vector3::dot(n,d)*invDen;
-
-		if(0<=result.x && result.x<=1 && 0<=result.y && result.y<=1 && result.z >= 0 && (result.x + result.y) <= 1)
-		{
-			//statCounter->addCriteriaTime(0,t.elapsed());
-			return HitInfo(r,result.z,tri.material,tri.normal);
-		}
-		//not in the triangle
-		else
-		{
-			//statCounter->addCriteriaTime(0,t.elapsed());
-			return HitInfo();
-		}
-	}
-	//don't intersect with plane
-	else
-	{
-		//statCounter->addCriteriaTime(0,t.elapsed());
-		return HitInfo();
-	}
-}
 
 //___________________
 //generateShadowRay
@@ -321,49 +276,10 @@ HitInfo Engine::intersectTri(Triangle tri, Ray r) {
 //A modifier pour plusieur lumière;
 Ray Engine::generateShadowRay(Vector3 origin) {
 
-	//Vector3 n = randDirection(Vector3(1,0,0),360);
+	//Vector3 n = importanceSampling(Vector3(1,0,0),360);
 	Vector3 direction = (lightTriangleList.at(0) - origin).normalize();
-	Ray r = Ray(randDirection(direction,10),origin);
+	Ray r = Ray(importanceSampling(direction),origin);
 	return r;
 }
 
-//___________________
-//intersectTriMoller
 
-bool Engine::intersectTriMoller(Triangle tri, Ray r, HitInfo &hitInfo) {
-
-	hitInfo.r = r;
-	hitInfo.intersection = 0;
-	hitInfo.material = tri.material;
-	hitInfo.normal = tri.normal;
-
-	Vector3 u,v;
-	u = tri.b - tri.a;
-	v = tri.c - tri.a;
-
-	Vector3 pvec = Vector3::cross(r.dir,v);
-	float det = Vector3::dot(u,pvec);
-
-	// if the determinant is negative the triangle is backfacing
-	// if the determinant is close to 0, the ray misses the triangle
-	if (det < selfIntersectionThreshold) return false;
-	// ray and triangle are parallel if det is close to 0
-	if (fabs(det) < selfIntersectionThreshold) return false;
-
-
-	float invDet = 1.0 / det;
-	Vector3 tvec = r.pos - tri.a;
-	float f = Vector3::dot(tvec,pvec) * invDet;
-
-	if (f < 0 || f > 1) return false;
-
-	Vector3 qvec = Vector3::cross(tvec,u);
-	float g = Vector3::dot(r.dir,qvec) * invDet;
-	if (g < 0 || f + g > 1) return false;
-
-	float h = Vector3::dot(v,qvec) * invDet;
-
-	hitInfo.intersection = h;
-
-	return true;
-}

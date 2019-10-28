@@ -20,14 +20,14 @@
 #include "Statistics.hpp"
 using namespace std;
 
-int resX = 256, resY=resX;
-int spp = 10;
+int resX = 128, resY=resX;
+int spp = 10000;
 int maxBounce = 4;
 int maxBSPDepth = 9;
 
 bool debug = 0;
 bool useBSP = 0;
-bool useCache = 0;
+bool useCache = 1;
 
 int main() {
 
@@ -77,13 +77,11 @@ int main() {
 	//Main Loop
 
 	//cache building:
-
-
-
 	//for each pixel
-
+	int counter = 0;
 	for(int i=0;i<resX;i++)
 	{
+
 		for(int j=0;j<resY;j++)
 		{
 			Ray r = cam.camRay(i,j);
@@ -97,7 +95,21 @@ int main() {
 			}
 
 		}
-		//cout  << i << "/" << resX << std::endl;
+		if(i==0)
+		{
+			cout  << "[";
+		}
+		//cout  << (100.0*i)/(float)resX;
+		if(((100.0*i)/(float)resX) > 5*counter)
+		{
+			cout <<"|";
+			std::cout.flush();
+			counter++;
+		}
+		if(i==resX-1)
+		{
+			cout <<"]" << std::endl;
+		}
 	}
 	cout  <<"Cache Building done" << std::endl;
 
@@ -105,6 +117,7 @@ int main() {
 
 	for(int n=1;n<=spp;n++)//for each sample
 	{
+		int counter=0;
 		//for each pixel
 		for(int i=0;i<resX;i++)
 		{
@@ -118,7 +131,23 @@ int main() {
 				oneSampleImg.array.at(pixelIndex) = pixel;
 			}
 
-			//cout  << i << "/" << resX << std::endl;
+
+			if(i==0)
+			{
+				cout  << "[";
+			}
+			//cout  << (100.0*i)/(float)resX;
+			if(((100.0*i)/(float)resX) > 5*counter)
+			{
+				cout <<"|";
+				std::cout.flush();
+				counter++;
+			}
+			if(i==resX-1)
+			{
+				cout <<"]" << std::endl;
+			}
+
 		}
 
 		for(int i=0;i<resX;i++)
@@ -141,3 +170,27 @@ int main() {
 	printf("DONE");
 	return 0;
 }
+
+/*
+
+Vector RandomDirectionLambertian:
+
+sin2_theta = uniform random number between 0 and 1 // the uniform random number is equal to sin^2(theta)
+
+cos2_theta = 1 - sin2_theta // cos^2(x) + sin^2(x) = 1
+
+sin_theta = sqrt(sin2_theta)
+cos_theta = sqrt(cos2_theta)
+
+orientation = uniform random number between 0 and 2pi
+return Vector(sin_theta * cos(orientation), cos_theta,sin_theta * sin(orientation))
+
+Vector RandomDirectionLambertian:
+
+theta = arcsin(sqrt(uniform random number between 0 and 1))
+orientation = uniform random number between 0 and 2pi    // convert spherical coordinates (orientation, theta) to a unit vector
+return Vector(sin(theta) * cos(orientation),cos(theta),sin(theta) * sin(orientation))
+
+
+		*/
+

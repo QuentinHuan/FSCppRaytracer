@@ -8,7 +8,6 @@
 #ifndef HITINFO_HPP_
 #define HITINFO_HPP_
 #include "Ray.hpp"
-#include "Object.hpp"
 #include "Material.hpp"
 
 class HitInfo {

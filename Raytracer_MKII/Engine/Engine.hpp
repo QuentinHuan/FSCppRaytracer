@@ -12,6 +12,7 @@
 #include "Color.hpp"
 #include "HitInfo.hpp"
 #include <random>
+#include <cmath>
 
 #include "BSP.hpp"
 #include "Statistics.hpp"
@@ -52,7 +53,7 @@ private:
 	HitInfo intersectTri(Triangle tri, Ray r);
 	bool intersectTriMoller(Triangle tri, Ray r, HitInfo &hitInfo);
 	Ray generateShadowRay(Vector3 origin);
-	Vector3 randDirection(Vector3 normal, float angle);
+	Vector3 importanceSampling(Vector3 normal);
 
 
 
