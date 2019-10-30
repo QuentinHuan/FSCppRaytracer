@@ -43,9 +43,9 @@ float Object::getScale() {
 		std::vector<float> Y = std::vector<float>();
 		std::vector<float> Z = std::vector<float>();
 
-		X.push_back(t.a.x);X.push_back(t.b.x);X.push_back(t.c.x);
-		Y.push_back(t.a.y);Y.push_back(t.b.y);Y.push_back(t.c.y);
-		Z.push_back(t.a.z);Z.push_back(t.b.z);Z.push_back(t.c.z);
+		X.push_back( abs(t.a.x));X.push_back( abs(t.b.x));X.push_back( abs(t.c.x));
+		Y.push_back( abs(t.a.y));Y.push_back( abs(t.b.y));Y.push_back( abs(t.c.y));
+		Z.push_back( abs(t.a.z));Z.push_back( abs(t.b.z));Z.push_back( abs(t.c.z));
 
 		if(Utility::max(X) > maxX) maxX = Utility::max(X);
 		if(Utility::max(Y) > maxY) maxY = Utility::max(Y);
@@ -113,16 +113,16 @@ Object Object::load(std::string filename) {
 	    	 switch(matCounter)
 	    	 {
 	    	 case 0:
-	    		 mat = Material(Color(0.9,0.9,0.9));
+	    		 mat = Material(Color(1,1,1)*1);
 	    		 break;
 	    	 case 1:
-	    		 mat = Material(Color(0.9,0,0));
+	    		 mat = Material(Color(1,0,0));
 	    		 break;
 	    	 case 2:
-	    		 mat = Material(Color(0,0.9,0));
+	    		 mat = Material(Color(0,1,0));
 	    		 break;
 	    	 case 3:
-	    		 mat = Material(Color(1,1,1),true,1);
+	    		 mat = Material(Color(1,0.7,0.5),true,5);
 	    		 break;
 	    	 }
 	    	 matCounter++;

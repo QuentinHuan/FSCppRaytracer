@@ -21,6 +21,7 @@ public:
 	Image(int resX,int resY, std::vector<Color> array);
 
 	void exportPPM(std::string file,int bitColorDepth);
+	float gamma(float c);
 };
 
 #endif /* IMAGE_HPP_ */

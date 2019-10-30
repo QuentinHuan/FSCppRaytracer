@@ -89,7 +89,11 @@ bool Vector3::operator ==(Vector3 v) {
 Vector3 Vector3::normalize() {
 
 	float n = calcNorm(Vector3(x,y,z));
-	Vector3 result(x/n,y/n,z/n);
+	Vector3 result(0,0,0);
+	if(n != 0)
+	{
+		result = Vector3(x/n,y/n,z/n);
+	}
 
 		return result;
 }

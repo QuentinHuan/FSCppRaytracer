@@ -10,12 +10,13 @@
 
 class Color {
 private:
-	void applyBounds();
+
 public:
 	float r,g,b;
 	Color();
 	Color(float r, float g, float b);
 
+	void applyBounds();
 	Color operator +(Color c);
 	Color operator -(Color c);
 	Color operator *(Color c);

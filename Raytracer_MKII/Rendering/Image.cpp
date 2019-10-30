@@ -29,6 +29,8 @@ Image::Image(int resX, int resY, std::vector<Color> sourceArray) {
 
 
 
+
+
 void Image::exportPPM(std::string file,int bitColorDepth) {
     std::ofstream fichier { file };
 
@@ -42,11 +44,15 @@ void Image::exportPPM(std::string file,int bitColorDepth) {
     for(auto i = 0; i<array.size();i++)
     {
     	colorInt c;
-    	c.r = (int)(array.at(i).r*maxValue);
-    	c.g = (int)(array.at(i).g*maxValue);
-    	c.b = (int)(array.at(i).b*maxValue);
+    	Color cf = array.at(i);
+    	cf.applyBounds();
+    	c.r = (int)(cf.r*maxValue);
+    	c.g = (int)(cf.g*maxValue);
+    	c.b = (int)(cf.b*maxValue);
+
     	img.push_back(c);
     }
+
 
 
     //Header
@@ -68,4 +74,9 @@ void Image::exportPPM(std::string file,int bitColorDepth) {
     	fichier << ligne << std::endl;
     }
 
+}
+
+float Image::gamma(float c) {
+
+	return std::pow(c,1/2.2);
 }

@@ -34,28 +34,32 @@ private:
 	std::uniform_real_distribution<float> distribution;
 
 	//numericalConst
-	const float selfIntersectionThreshold = 0.001;
+	const float selfIntersectionThreshold = 0.000001;
 
 	//internal data structure
 	Statistics *statCounter;
 	std::vector<Object> objectList;
-	std::vector<Vector3> lightTriangleList;
+	std::vector<Triangle> lightTriangleList;
 	std::vector<HitInfo> camRayCache;
 
 
+
 	//fonctions------------------------------------------------
-	std::vector<HitInfo> buildIntersectionStructure(Ray camRay, HitInfo &cache);
-	void bounceRay(HitInfo hit, Ray r, int bounce, std::vector<HitInfo> &structure);
+	std::vector<HitInfo> buildIndirectLightStructure(Ray camRay, HitInfo &cache);
+	std::vector<HitInfo> buildDirectLightStructure(Ray camRay, HitInfo &cache);
+
+
+
+	void bounceRay(HitInfo hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> &structure);
 	Color computeLightAlongRay(Ray camRay,HitInfo &cache);
 
 	HitInfo rayCast(Ray r);
+
 	HitInfo intersectObject(Object obj, Ray r);
-	HitInfo intersectTri(Triangle tri, Ray r);
-	bool intersectTriMoller(Triangle tri, Ray r, HitInfo &hitInfo);
 	Ray generateShadowRay(Vector3 origin);
 	Vector3 importanceSampling(Vector3 normal);
-
-
+	Vector3 uniformRndInSolidAngle(Vector3 normal,float angle);
+	float triangleViewAngle(Triangle t, Vector3 viewerPosition);
 
 	BSP accelerationStructure;
 

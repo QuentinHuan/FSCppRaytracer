@@ -21,7 +21,7 @@
 using namespace std;
 
 int resX = 128, resY=resX;
-int spp = 10000;
+int spp = 100;
 int maxBounce = 4;
 int maxBSPDepth = 9;
 
@@ -41,6 +41,7 @@ int main() {
 	//scene Data
 	std::vector<Object> objList;
 	objList.push_back(Object("Cornell box.obj"));
+	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
 	//objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
@@ -131,7 +132,6 @@ int main() {
 				oneSampleImg.array.at(pixelIndex) = pixel;
 			}
 
-
 			if(i==0)
 			{
 				cout  << "[";
@@ -167,30 +167,12 @@ int main() {
 	statCounter.runtime = t.elapsed();
 	imgFinal.exportPPM("img.ppm",8);
 	cout << statCounter.toString(false) << endl;
+
+
+
+
 	printf("DONE");
 	return 0;
 }
 
-/*
-
-Vector RandomDirectionLambertian:
-
-sin2_theta = uniform random number between 0 and 1 // the uniform random number is equal to sin^2(theta)
-
-cos2_theta = 1 - sin2_theta // cos^2(x) + sin^2(x) = 1
-
-sin_theta = sqrt(sin2_theta)
-cos_theta = sqrt(cos2_theta)
-
-orientation = uniform random number between 0 and 2pi
-return Vector(sin_theta * cos(orientation), cos_theta,sin_theta * sin(orientation))
-
-Vector RandomDirectionLambertian:
-
-theta = arcsin(sqrt(uniform random number between 0 and 1))
-orientation = uniform random number between 0 and 2pi    // convert spherical coordinates (orientation, theta) to a unit vector
-return Vector(sin(theta) * cos(orientation),cos(theta),sin(theta) * sin(orientation))
-
-
-		*/
 

@@ -25,18 +25,21 @@ Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,
 
 	accelerationStructure=bsp;
 	this->useAccelerationStructure = useAccelerationStructure;
+	lightTriangleList = std::vector<Triangle>();
+
 	for(Object o : objectList)
 	{
 		for(Triangle t : o.faces)
 		{
 			if(t.material.emission)
 			{
-				lightTriangleList.push_back(t.calcCenter());
+				lightTriangleList.push_back(t);
 			}
 		}
 	}
 	camRayCache = std::vector<HitInfo>();
 }
+
 
 HitInfo Engine::buildCache(Ray r) {
 
@@ -59,7 +62,7 @@ Color Engine::rayTrace(Ray camRay, HitInfo &cache) {
 //buildIntersectionStructure
 
 //compute all the intersections from camera to the first light hit, bouncing off objects
-std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay, HitInfo &cache) {
+std::vector<HitInfo> Engine::buildIndirectLightStructure(Ray camRay, HitInfo &cache) {
 	std::vector<HitInfo> structure;
 	HitInfo hit{};
 	int bounce = 0;
@@ -94,13 +97,15 @@ std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay, HitInfo &cac
 
 		if(hit.hitSomething)//hit something: bounce the ray
 		{
-			bounceRay(hit,r,bounce,structure);
+			bounceRay(hit,r,bounce,false,structure);
 			bounce++;
 		}
 		else//hit nothing, stop
 		{
 			hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
-			hit.material = Material(Color(1,1,1),true,1.0);
+			//hit.material = Material(Color(1,1,1),true,1);
+			hit.material =lightTriangleList.at(0).material;
+			hit.material.emissionPower = 1;
 			structure.push_back(hit);
 			statCounter->addCriteriaOccurence(3);
 			return structure;
@@ -111,27 +116,93 @@ std::vector<HitInfo> Engine::buildIntersectionStructure(Ray camRay, HitInfo &cac
 	return structure;
 }
 
+//compute all the intersections from camera to the first light hit, bouncing off objects
+std::vector<HitInfo> Engine::buildDirectLightStructure(Ray camRay, HitInfo &cache) {
+	std::vector<HitInfo> structure;
+	HitInfo hit{};
+	int bounce = 0;
+	int max = 1;
 
-void Engine::bounceRay(HitInfo hit, Ray r, int bounce, std::vector<HitInfo> &structure) {
-
-
-	if(hit.material.emission == true)//it's a light: stop
+	//fire bounce rays until it reaches a light source
+	statCounter->addCriteriaOccurence(0);//number of rays from the camera
+	do
 	{
-		hit.r = Ray(Vector3(0,0,0),hit.calcIntersectionCoord());
-		structure.push_back(hit);
-		statCounter->addCriteriaOccurence(1);//number of rays hitting a light source
-	}
-	else//otherwise, bounce
-	{
-		if(bounce == maxBounce) statCounter->addCriteriaOccurence(2);//number of rays not finding a light source
-		if(bounce == maxBounce-1 && heuristic)//not hitting anything after n bounces, last chance to hit a light
+		//-------------------------
+		//Ray construction
+		Ray r;
+		if(structure.size() == 0) //first ray is the ray from the camera
 		{
-			//the next bounce ray will not be random, but towards a light source
-			Vector3 debug = hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold;
-			hit.r =generateShadowRay(debug);
+				r = camRay;
+		}
+		else
+		{
+			r = structure.at(structure.size()-1).r;//otherwise, we cast a ray starting from the intersection, in the direction computed during the last iteration
+		}
+
+		//-------------------------
+		//Intersection Computation
+
+		if(useCache && bounce == 0)//use cache for the camRay (same for each pass)
+		{
+			hit = cache;
+		}
+		else
+		{
+			hit = rayCast(r);
+		}
+
+		if(hit.hitSomething)//hit something: bounce the ray
+		{
+			bounceRay(hit,r,bounce,true,structure);
+			bounce++;
+		}
+		else//hit nothing, stop
+		{
+			hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
+			hit.material = Material(Color(1,1,1),true,0);
+			structure.push_back(hit);
+			statCounter->addCriteriaOccurence(3);
+			return structure;
+		}
+
+
+	}while(hit.material.emission == false && bounce <= max);
+	return structure;
+}
+
+
+void Engine::bounceRay(HitInfo hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> &structure) {
+
+	if(directLight)
+	{
+		if(bounce == 0)//direct light shadowray
+		{
+			hit.r = generateShadowRay(hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);
 			structure.push_back(hit);
 		}
 		else
+		{
+			if((hit.material.emission == true))//it's a light: stop
+			{
+				hit.r = Ray(Vector3(0,0,0),hit.calcIntersectionCoord());
+				structure.push_back(hit);
+			}
+			else//shadow
+			{
+				hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
+				hit.material = Material(Color(0,0,0),true,0);
+				structure.push_back(hit);
+			}
+		}
+	}
+	else
+	{
+		if((hit.material.emission == true && bounce !=1))//it's a light: stop
+		{
+			hit.r = Ray(Vector3(0,0,0),hit.calcIntersectionCoord());
+			structure.push_back(hit);
+		}
+		else//otherwise, bounce
 		{
 			hit.r = Ray(importanceSampling(hit.normal),hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);//new bounce ray from the intersection point (+ a small offset to prevent self intersecting artifacts)
 			structure.push_back(hit);
@@ -144,41 +215,70 @@ void Engine::bounceRay(HitInfo hit, Ray r, int bounce, std::vector<HitInfo> &str
 //_______________________________
 //computeLightAlongRay
 
+
+
+
+
+//-----------------------------------------------------
+//A REECRIRE
+//-----------------------------------------------------
 //compute pixel color from the multiple data gathered by buildIntersectionStructure(...)
 Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
-	//std::vector<HitInfo> structure = buildIntersectionStructure(camRay);
-	std::vector<HitInfo> structure = buildIntersectionStructure(camRay, cache);
 
-	Color output = Color(0,0,0);
-	if(structure.size() > 0 && structure.at(structure.size()-1).r.dir == Vector3(0,0,0))
+	//std::vector<HitInfo> directStructure;
+	std::vector<HitInfo> directStructure = buildDirectLightStructure(camRay, cache);
+	Color outputDirect = Color(0,0,0);
+
+	if(directStructure.size() > 0 && directStructure.at(directStructure.size()-1).r.dir == Vector3(0,0,0))
 	{
-		for(int i =structure.size()-1; i>=0; i--)//we travel across the structure backward
+		for(signed int i =directStructure.size()-1; i>=0; i--)//we travel across the structure backward
 		{
-			//last ray hit a light
-			if(i==structure.size()-1) output = structure.at(i).material.diffuse*structure.at(i).material.emissionPower;
+			//last ray hits a light
+			if(i==directStructure.size()-1)
+			{
+				outputDirect = directStructure.at(i).material.diffuse*directStructure.at(i).material.emissionPower;
+			}
 
 			else//at each bounce, the light intensity is absorbed (material dependent)
 			{
-				//Vector3 v = structure.at(i).normal.normalize();
-				//float lambert = Vector3::dot(v,structure.at(i).r.dir.normalize());//Absorption coef
-				//output = output*structure.at(i).material.diffuse*abs(lambert) *2.0; //uniform distrib
-				output = output*structure.at(i).material.diffuse; //cosinus distrib
-				//output = structure.at(i).material.diffuse;
+				Ray shadowRay = directStructure.at(i).r;
+				float Phi = Vector3::calcNorm(shadowRay.dir);
+				float invpdf = (2*3.14*(1-std::cos(Phi)));
+				Vector3 v = directStructure.at(i).normal.normalize();
+				float cosine = abs(Vector3::dot(v,shadowRay.dir.normalize()));//Absorption coef
+
+				outputDirect = outputDirect*(1.0/(3.14))*directStructure.at(i).material.diffuse*(invpdf)*cosine; //cosinus distrib
 			}
 		}
 	}
-	return output;
+
+	std::vector<HitInfo> indirectStructure;
+	indirectStructure = buildIndirectLightStructure(camRay, cache);
+
+	Color outputIndirect = Color(0,0,0);
+		if(indirectStructure.size() > 0 && indirectStructure.at(indirectStructure.size()-1).r.dir == Vector3(0,0,0))
+		{
+			for(int i =indirectStructure.size()-1; i>=0; i--)//we travel across the structure backward
+			{
+				//last ray hits a light
+				if(i==indirectStructure.size()-1) outputIndirect = indirectStructure.at(i).material.diffuse*indirectStructure.at(i).material.emissionPower;
+
+				else//at each bounce, the light intensity is absorbed (material dependent)
+				{
+					outputIndirect = outputIndirect*indirectStructure.at(i).material.diffuse; //cosinus distrib
+				}
+			}
+		}
+
+	return outputDirect*1 +outputIndirect*1;
 }
 
 //-------------------------------
 //Geometry
 //-------------------------------
 
-//PUBLIC:------------------------------
-
 //___________________
 //rayCast
-
 //perform a ray cast in the scene against all objects
 //return true if the ray hit something
 //all useful info (coord, material ect...) are stored in the HitInfo object provided
@@ -205,11 +305,8 @@ HitInfo Engine::rayCast(Ray r) {
 	}
 }
 
-//PRIVATE:----------------------------
-
 //___________________
 //intersectObject
-
 //perform a ray cast against one object
 //return true if the ray hit something
 //all useful info (coord, material ect...) are stored in the HitInfo object provided
@@ -243,22 +340,45 @@ HitInfo Engine::intersectObject(Object obj, Ray r) {
 
 //___________________
 //importanceSampling
-
 Vector3 Engine::importanceSampling(Vector3 normal) {
 
-	float u = distribution(generator);
-	float theta = distribution(generator);
+	float u = distribution(generator);//[,1]
+	float theta = distribution(generator)*2*3.14;//[0,2pi]
 
 
 	float Phi = std::asin(std::pow(u,0.5));//distribution: change pow to get various cos^n distrib over the sphere (pow=1 means uniform)
-
-
-	Vector3 localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi) );
+	Vector3 localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi));
 
 	Vector3 Z = normal;
 	Vector3 X;
 	Vector3 Y;
 
+	//A REECRIRE
+	if(Z.y != 0) Y = Vector3(Z.y,-(Z.x + Z.z),Z.y);
+	else  Y = Vector3(Z.z,0,-Z.x);
+
+	X = Vector3::cross(Y,Z);
+	Vector3 worldV =  X*localV.x + Y*localV.y + Z*localV.z;
+
+	return worldV;
+}
+
+Vector3 Engine::uniformRndInSolidAngle(Vector3 normal, float angle) {
+
+	float u = distribution(generator);
+	float theta = distribution(generator)*2*3.14;
+	float Phi = std::acos(1-(u*(1-std::cos(angle))));
+
+	Vector3 localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi) );
+	Vector3 Z = normal;
+	Vector3 X;
+	Vector3 Y;
+
+
+
+	//localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi) );
+
+	//A REECRIRE
 	if(Z.y != 0) Y = Vector3(Z.y,-(Z.x + Z.z),Z.y);
 	else  Y = Vector3(Z.z,0,-Z.x);
 
@@ -269,17 +389,53 @@ Vector3 Engine::importanceSampling(Vector3 normal) {
 }
 
 
+float Engine::triangleViewAngle(Triangle t, Vector3 viewerPosition) {
 
+	std::vector<float> result;
+	std::vector<Vector3> vertex;
+	vertex.push_back(t.a);vertex.push_back(t.b);vertex.push_back(t.c);
+
+	for(int i =0;i<3;i++)
+	{
+		Vector3 d = (t.calcCenter() - viewerPosition).normalize();
+		Vector3 da = (vertex.at(i) - viewerPosition).normalize();
+		float dot = Vector3::dot(da,d);
+
+		result.push_back(std::acos(dot));
+	}
+
+	return Utility::max(result);
+
+}
 //___________________
 //generateShadowRay
 
-//A modifier pour plusieur lumière;
+//Modif pour lumieres multiples;
 Ray Engine::generateShadowRay(Vector3 origin) {
 
-	//Vector3 n = importanceSampling(Vector3(1,0,0),360);
-	Vector3 direction = (lightTriangleList.at(0) - origin).normalize();
-	Ray r = Ray(importanceSampling(direction),origin);
-	return r;
+	Triangle t;
+	float u = distribution(generator);
+	if(lightTriangleList.size()!=0)
+	{
+		if(u>=0)
+		{
+			t = lightTriangleList.at(0);
+		}
+		else
+		{
+			t = lightTriangleList.at(1);
+		}
+		float Phi = triangleViewAngle(t, origin);
+		Vector3 direction = uniformRndInSolidAngle((t.calcCenter() - origin), Phi).normalize()*(Phi);
+		//Vector3 direction = (t.calcCenter() - origin).normalize()*Phi;//adhoc shadowRay
+		Ray r = Ray(direction,origin);
+		return r;
+	}
+	else
+	{
+		Ray r = Ray();
+		return r;
+	}
 }
 
 
