@@ -20,7 +20,7 @@
 #include "Statistics.hpp"
 using namespace std;
 
-int resX = 128, resY=resX;
+int resX = 512, resY=resX;
 int spp = 100;
 int maxBounce = 4;
 int maxBSPDepth = 9;

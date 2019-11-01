@@ -42,13 +42,9 @@ private:
 	std::vector<Triangle> lightTriangleList;
 	std::vector<HitInfo> camRayCache;
 
-
-
 	//fonctions------------------------------------------------
 	std::vector<HitInfo> buildIndirectLightStructure(Ray camRay, HitInfo &cache);
 	std::vector<HitInfo> buildDirectLightStructure(Ray camRay, HitInfo &cache);
-
-
 
 	void bounceRay(HitInfo hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> &structure);
 	Color computeLightAlongRay(Ray camRay,HitInfo &cache);
@@ -59,6 +55,9 @@ private:
 	Ray generateShadowRay(Vector3 origin);
 	Vector3 importanceSampling(Vector3 normal);
 	Vector3 uniformRndInSolidAngle(Vector3 normal,float angle);
+	Vector3 uniformRndInTriangle(Triangle t);
+	Vector3 uniformRndInSphericalTriangle(Triangle t,Vector3 position);
+
 	float triangleViewAngle(Triangle t, Vector3 viewerPosition);
 
 	BSP accelerationStructure;

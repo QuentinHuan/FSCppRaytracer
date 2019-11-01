@@ -241,13 +241,27 @@ Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
 
 			else//at each bounce, the light intensity is absorbed (material dependent)
 			{
+
+
+				//version avec angles solides
 				Ray shadowRay = directStructure.at(i).r;
 				float Phi = Vector3::calcNorm(shadowRay.dir);
-				float invpdf = (2*3.14*(1-std::cos(Phi)));
+				float invpdf = (2*3.14*(1-std::cos(Phi)));//uniform
+				//float invpdf = (3.14*std::pow(std::sin(Phi),2));//cosine
 				Vector3 v = directStructure.at(i).normal.normalize();
 				float cosine = abs(Vector3::dot(v,shadowRay.dir.normalize()));//Absorption coef
 
-				outputDirect = outputDirect*(1.0/(3.14))*directStructure.at(i).material.diffuse*(invpdf)*cosine; //cosinus distrib
+				/*
+				//version avec echantillonage direct (NE MARCHE PAS)
+				Ray shadowRay = directStructure.at(i).r;
+				float Aire = Vector3::calcNorm(shadowRay.dir);
+				float invpdf = 1;
+				Vector3 v = directStructure.at(i).normal.normalize();
+				float cosine = abs(Vector3::dot(v,shadowRay.dir.normalize()));//Absorption coef
+				*/
+
+				outputDirect = outputDirect*(1.0/(3.14))*directStructure.at(i).material.diffuse*(invpdf)*cosine; //uniform distrib
+				//outputDirect = outputDirect*(1.0/(3.14))*directStructure.at(i).material.diffuse*(invpdf); //cosinus distrib
 			}
 		}
 	}
@@ -367,16 +381,15 @@ Vector3 Engine::uniformRndInSolidAngle(Vector3 normal, float angle) {
 
 	float u = distribution(generator);
 	float theta = distribution(generator)*2*3.14;
-	float Phi = std::acos(1-(u*(1-std::cos(angle))));
+	float Phi = std::acos(1-(u*(1-std::cos(angle)))); //uniform
+
+	//float Phi = std::asin(std::pow(u*3.14,0.5)*std::sin(angle)); //cosine weigted
+
 
 	Vector3 localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi) );
 	Vector3 Z = normal;
 	Vector3 X;
 	Vector3 Y;
-
-
-
-	//localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi) );
 
 	//A REECRIRE
 	if(Z.y != 0) Y = Vector3(Z.y,-(Z.x + Z.z),Z.y);
@@ -407,6 +420,46 @@ float Engine::triangleViewAngle(Triangle t, Vector3 viewerPosition) {
 	return Utility::max(result);
 
 }
+
+
+Vector3 Engine::uniformRndInTriangle(Triangle t) {
+	float u1 = distribution(generator);
+	float u2 = distribution(generator);
+	float sqrt = std::pow(u1,0.5);
+	float x = 1- sqrt;
+	float y = u2*sqrt;
+
+	Vector3 U = t.a-t.b;
+	Vector3 V = t.a-t.c;
+
+	Vector3 v = U*x + V*y;
+	return v;
+}
+
+Vector3 Engine::uniformRndInSphericalTriangle(Triangle t, Vector3 position) {
+
+	Vector3 OA = (t.a-position).normalize();
+	Vector3 OB = (t.b-position).normalize();
+	Vector3 OC = (t.c-position).normalize();
+
+	float a = std::acos(Vector3::dot(OB,OC));
+	float b = std::acos(Vector3::dot(OA,OC));
+	float c = std::acos(Vector3::dot(OA,OB));
+
+	float s = (a+b+c)/2;
+
+	float product = std::tan(s/2)*std::tan((s-a)/2)*std::tan((s-b)/2)*std::tan((s-c)/2);
+	float E = 4*std::atan(std::pow(product,0.5));
+
+	float A = E;
+
+	Vector3 randDirection = (uniformRndInTriangle(t) - position).normalize() * A;
+
+
+	return randDirection;
+}
+
+
 //___________________
 //generateShadowRay
 
@@ -425,8 +478,11 @@ Ray Engine::generateShadowRay(Vector3 origin) {
 		{
 			t = lightTriangleList.at(1);
 		}
+
+
 		float Phi = triangleViewAngle(t, origin);
-		Vector3 direction = uniformRndInSolidAngle((t.calcCenter() - origin), Phi).normalize()*(Phi);
+		Vector3 direction = uniformRndInSolidAngle((t.calcCenter() - origin), Phi).normalize()*(Phi);//version angle solide
+		//Vector3 direction = uniformRndInSphericalTriangle(t,origin);//version direct sampling
 		//Vector3 direction = (t.calcCenter() - origin).normalize()*Phi;//adhoc shadowRay
 		Ray r = Ray(direction,origin);
 		return r;
