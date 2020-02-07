@@ -15,18 +15,18 @@
 #include "Material.hpp"
 #include <ctime>
 
-#include "BSP.hpp"
+
 #include "Engine.hpp"
 #include "Statistics.hpp"
 using namespace std;
 
-int resX = 512, resY=resX;
-int spp = 100;
+int resX = 128, resY=resX;
+int spp = 1;
 int maxBounce = 4;
-int maxBSPDepth = 9;
+int maxBSPDepth = 2;
 
 bool debug = 0;
-bool useBSP = 0;
+bool useBSP = 1;
 bool useCache = 1;
 
 int main() {
@@ -52,15 +52,7 @@ int main() {
 	//acceleration structure
 	sceneScale = objList.at(0).getScale()+0.001;
 	offset = objList.at(0).getCenter();
-	BSP tree = BSP(maxBSPDepth,objList.at(0).faces,sceneScale,offset);
 
-	sizePartition = tree.debugPartition().size();
-
-	if(debug)
-	{
-		objList.at(0).faces = tree.debugPartition();
-		useBSP = false;
-	}
 	sizePartition = objList.at(0).faces.size();
 
 	cout  <<"BSP Building done" << std::endl;
@@ -69,7 +61,7 @@ int main() {
 	Image oneSampleImg(resX,resY);
 	Image imgFinal(resX,resY);
 	Statistics statCounter{};
-	Engine engine(objList, statCounter,tree,maxBounce,useBSP,useCache);
+	Engine engine(objList, statCounter,maxBounce,useCache);
 
 	vector<HitInfo> cache;
 

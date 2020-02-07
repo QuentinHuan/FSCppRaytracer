@@ -7,38 +7,36 @@
 
 #include "Engine.hpp"
 
-#include "HitInfo.hpp"
+Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,int maxBounce, bool useCache) {
 
+	this->objectList = objectList;
+		generator = std::default_random_engine();
+		distribution = std::uniform_real_distribution<float>(0,1.0);
+		this->statCounter = &statCounter;
+
+		this->heuristic = heuristic;
+		this->maxBounce = maxBounce;
+		this->useCache = useCache;
+
+		lightTriangleList = std::vector<Triangle>();
+
+		for(Object o : objectList)
+		{
+			for(Triangle t : o.faces)
+			{
+				if(t.material.emission)
+				{
+					lightTriangleList.push_back(t);
+				}
+			}
+		}
+		camRayCache = std::vector<HitInfo>();
+}
 
 //-------------------------------
 //Engine Construction
 //-------------------------------
-Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,int maxBounce,bool useAccelerationStructure,bool useCache) {
-	this->objectList = objectList;
-	generator = std::default_random_engine();
-	distribution = std::uniform_real_distribution<float>(0,1.0);
-	this->statCounter = &statCounter;
 
-	this->heuristic = heuristic;
-	this->maxBounce = maxBounce;
-	this->useCache = useCache;
-
-	accelerationStructure=bsp;
-	this->useAccelerationStructure = useAccelerationStructure;
-	lightTriangleList = std::vector<Triangle>();
-
-	for(Object o : objectList)
-	{
-		for(Triangle t : o.faces)
-		{
-			if(t.material.emission)
-			{
-				lightTriangleList.push_back(t);
-			}
-		}
-	}
-	camRayCache = std::vector<HitInfo>();
-}
 
 
 HitInfo Engine::buildCache(Ray r) {
@@ -329,7 +327,7 @@ HitInfo Engine::intersectObject(Object obj, Ray r) {
 
 	if(useAccelerationStructure)
 	{
-		obj.faces = accelerationStructure.accelerationStructure(r);
+
 	}
 
 	//fill the vector with the coord of all intersection points (in ray space)

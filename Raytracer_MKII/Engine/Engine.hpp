@@ -14,10 +14,10 @@
 #include <random>
 #include <cmath>
 
-#include "BSP.hpp"
 #include "Statistics.hpp"
 #include "Timer.hpp"
 #include "Utility.hpp"
+
 
 
 class Engine {
@@ -60,11 +60,10 @@ private:
 
 	float triangleViewAngle(Triangle t, Vector3 viewerPosition);
 
-	BSP accelerationStructure;
-
 public:
 	//fonctions------------------------------------------------
-	Engine(std::vector<Object> objectList, Statistics &statCounter,BSP &bsp,int maxBounce,bool useAccelerationStructure,bool useCache);
+	Engine();
+	Engine(std::vector<Object> objectList, Statistics &statCounter,int maxBounce,bool useCache);
 	Color rayTrace(Ray camRay, HitInfo &cache);
 	HitInfo buildCache(Ray r);
 
