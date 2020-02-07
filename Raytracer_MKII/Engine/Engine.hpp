@@ -25,9 +25,7 @@ private:
 
 	//rendering properties
 	int maxBounce;
-	bool heuristic;
-	bool useAccelerationStructure ;
-	bool useCache;
+	bool useAccelerationStructure = false;
 
 	//random generator
 	std::default_random_engine generator;
@@ -38,20 +36,20 @@ private:
 
 	//internal data structure
 	Statistics *statCounter;
-	std::vector<Object> objectList;
+	std::vector<Object> & objectList;
 	std::vector<Triangle> lightTriangleList;
 	std::vector<HitInfo> camRayCache;
 
 	//fonctions------------------------------------------------
-	std::vector<HitInfo> buildIndirectLightStructure(Ray camRay, HitInfo &cache);
-	std::vector<HitInfo> buildDirectLightStructure(Ray camRay, HitInfo &cache);
+	std::vector<HitInfo> buildIndirectLightStructure(Ray & camRay, HitInfo &cache);
+	std::vector<HitInfo> buildDirectLightStructure(Ray & camRay, HitInfo &cache);
 
 	void bounceRay(HitInfo hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> &structure);
-	Color computeLightAlongRay(Ray camRay,HitInfo &cache);
+	Color computeLightAlongRay(Ray &camRay,HitInfo &cache);
 
 	HitInfo rayCast(Ray r);
 
-	HitInfo intersectObject(Object obj, Ray r);
+	HitInfo intersectObject(Object &obj, Ray r);
 	Ray generateShadowRay(Vector3 origin);
 	Vector3 importanceSampling(Vector3 normal);
 	Vector3 uniformRndInSolidAngle(Vector3 normal,float angle);
@@ -63,7 +61,7 @@ private:
 public:
 	//fonctions------------------------------------------------
 	Engine();
-	Engine(std::vector<Object> objectList, Statistics &statCounter,int maxBounce,bool useCache);
+	Engine(std::vector<Object> & objectList, Statistics &statCounter,int maxBounce);
 	Color rayTrace(Ray camRay, HitInfo &cache);
 	HitInfo buildCache(Ray r);
 

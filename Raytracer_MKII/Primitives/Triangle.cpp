@@ -7,29 +7,14 @@
 
 #include "Triangle.hpp"
 
-Triangle::Triangle() {
-	this->a = Vector3();
-	this->b = Vector3();
-	this->c = Vector3();
-	this->normal = Vector3();
-	this->material = Material();
-}
+Triangle::Triangle() : a(Vector3()), b(Vector3()), c(Vector3()),normal(Vector3()), material(Material()){}
 
-Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Material material) {
-	this->a = a;
-	this->b = b;
-	this->c = c;
+Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Material material) :  a(a), b(b), c(c), material(material){
 	this->normal = calcNormal();
-	this->material = material;
 }
 
 
-Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Vector3 normal, Material material) {
-	this->a = a;
-	this->b = b;
-	this->c = c;
-	this->normal = normal;
-	this->material = material;
+Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Vector3 normal, Material material) : a(a), b(b), c(c), normal(normal), material(material){
 }
 
 //___________________

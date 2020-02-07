@@ -7,19 +7,9 @@
 
 #include "Color.hpp"
 
-Color::Color() {
-	// TODO Auto-generated constructor stub
-	this->r = 0;
-	this->g = 0;
-	this->b = 0;
-}
+Color::Color() : r(0),g(0),b(0) {}
 
-Color::Color(float r, float g, float b) {
-	this->r = r;
-	this->g = g;
-	this->b = b;
-
-}
+Color::Color(float r, float g, float b) : r(r), g(g), b(b) {}
 
 void Color::applyBounds() {
 	if(r > 1)

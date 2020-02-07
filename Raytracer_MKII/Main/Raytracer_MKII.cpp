@@ -20,21 +20,12 @@
 #include "Statistics.hpp"
 using namespace std;
 
-int resX = 128, resY=resX;
-int spp = 1;
+int resX = 256, resY=resX;
+int spp = 10;
 int maxBounce = 4;
 int maxBSPDepth = 2;
 
-bool debug = 0;
-bool useBSP = 1;
-bool useCache = 1;
-
 int main() {
-
-
-	float sceneScale = 2;
-	Vector3 offset;
-	int sizeObj,sizePartition;
 
 	Timer t{};
 
@@ -45,27 +36,17 @@ int main() {
 	//objList.push_back(Object("Furnace.obj"));
 	//objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
-	sizeObj = objList.at(0).faces.size();
 
 	Camera cam(Vector3(-0.4,-2,0), resX,resY,3.14/4.0,1);
-
-	//acceleration structure
-	sceneScale = objList.at(0).getScale()+0.001;
-	offset = objList.at(0).getCenter();
-
-	sizePartition = objList.at(0).faces.size();
-
-	cout  <<"BSP Building done" << std::endl;
 
 	//Engine declaration
 	Image oneSampleImg(resX,resY);
 	Image imgFinal(resX,resY);
 	Statistics statCounter{};
-	Engine engine(objList, statCounter,maxBounce,useCache);
+	Engine engine(objList, statCounter,maxBounce);
 
 	vector<HitInfo> cache;
-
-
+	cache.reserve(resX*resY);
 	//--------------------------------------------
 	//Main Loop
 
@@ -78,16 +59,9 @@ int main() {
 		for(int j=0;j<resY;j++)
 		{
 			Ray r = cam.camRay(i,j);
-			if(useCache)
-			{
-				cache.push_back(engine.buildCache(r));
-			}
-			else
-			{
-				cache.push_back(HitInfo());
-			}
-
+			cache.push_back(engine.buildCache(r));
 		}
+
 		if(i==0)
 		{
 			cout  << "[";
@@ -105,7 +79,6 @@ int main() {
 		}
 	}
 	cout  <<"Cache Building done" << std::endl;
-
 
 
 	for(int n=1;n<=spp;n++)//for each sample

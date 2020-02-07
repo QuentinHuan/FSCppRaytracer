@@ -6,37 +6,17 @@
  */
 #include "Vector3.hpp"
 
-Vector3::Vector3()
+Vector3::Vector3() : x(0),  y(0), z(0){}
+Vector3::Vector3(float x, float y, float z) : x(x),y(y),z(z){}
+
+Vector3 Vector3::operator +(const Vector3 & v)
 {
-	this->x = 0;
-	this->y = 0;
-	this->z = 0;
-}
-Vector3::Vector3(float x, float y, float z)
-{
-	this->x = x;
-	this->y = y;
-	this->z = z;
+	return Vector3(x+v.x, y+v.y, z+v.z);
 }
 
-Vector3 Vector3::operator +(Vector3 v)
+Vector3 Vector3::operator -(const Vector3 & v)
 {
-	Vector3 result;
-	result.x = x+v.x;
-	result.y = y+v.y;
-	result.z = z+v.z;
-
-	return result;
-}
-
-Vector3 Vector3::operator -(Vector3 v)
-{
-	Vector3 result;
-	result.x = x-v.x;
-	result.y = y-v.y;
-	result.z = z-v.z;
-
-	return result;
+	return Vector3(x-v.x, y-v.y, z-v.z);
 }
 
 Vector3 Vector3::operator *(float lf)
@@ -51,23 +31,16 @@ Vector3 Vector3::operator *(float lf)
 
 }
 
-Vector3 Vector3::operator /(float lf)
+Vector3 Vector3::operator /(const float lf)
 {
-	Vector3 result;
-	result.x = x/lf;
-	result.y = y/lf;
-	result.z = z/lf;
-
-	return result;
-
-
+	return Vector3(x/lf, y/lf, z/lf);;
 }
 
-float Vector3::dot(Vector3 u, Vector3 v) {
+float Vector3::dot(const Vector3 & u, const Vector3 & v) {
 	return u.x*v.x + u.y*v.y + u.z*v.z;
 }
 
-Vector3 Vector3::cross(Vector3 u, Vector3 v)
+Vector3 Vector3::cross(const Vector3 & u, const Vector3 & v)
 {
 	Vector3 result;
 	result.x = u.y*v.z - u.z*v.y;
@@ -89,11 +62,12 @@ bool Vector3::operator ==(Vector3 v) {
 Vector3 Vector3::normalize() {
 
 	float n = calcNorm(Vector3(x,y,z));
-	Vector3 result(0,0,0);
 	if(n != 0)
 	{
-		result = Vector3(x/n,y/n,z/n);
+		return Vector3(x/n,y/n,z/n);
 	}
-
-		return result;
+	else
+	{
+		return 	Vector3(0,0,0);
+	}
 }

@@ -7,22 +7,19 @@
 
 #include "Engine.hpp"
 
-Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,int maxBounce, bool useCache) {
+Engine::Engine(std::vector<Object> &objectList, Statistics &statCounter,int maxBounce) : objectList(objectList) {
 
-	this->objectList = objectList;
 		generator = std::default_random_engine();
 		distribution = std::uniform_real_distribution<float>(0,1.0);
 		this->statCounter = &statCounter;
 
-		this->heuristic = heuristic;
 		this->maxBounce = maxBounce;
-		this->useCache = useCache;
 
 		lightTriangleList = std::vector<Triangle>();
 
-		for(Object o : objectList)
+		for(auto it = objectList.begin(); it != objectList.end(); it++)
 		{
-			for(Triangle t : o.faces)
+			for(Triangle t : it->faces)
 			{
 				if(t.material.emission)
 				{
@@ -40,9 +37,7 @@ Engine::Engine(std::vector<Object> objectList, Statistics &statCounter,int maxBo
 
 
 HitInfo Engine::buildCache(Ray r) {
-
 	return  rayCast(r);
-
 }
 
 //MAIN
@@ -60,8 +55,9 @@ Color Engine::rayTrace(Ray camRay, HitInfo &cache) {
 //buildIntersectionStructure
 
 //compute all the intersections from camera to the first light hit, bouncing off objects
-std::vector<HitInfo> Engine::buildIndirectLightStructure(Ray camRay, HitInfo &cache) {
+std::vector<HitInfo> Engine::buildIndirectLightStructure(Ray & camRay, HitInfo &cache) {
 	std::vector<HitInfo> structure;
+	structure.reserve(maxBounce+1);
 	HitInfo hit{};
 	int bounce = 0;
 
@@ -80,11 +76,9 @@ std::vector<HitInfo> Engine::buildIndirectLightStructure(Ray camRay, HitInfo &ca
 		{
 			r = structure.at(structure.size()-1).r;//otherwise, we cast a ray starting from the intersection, in the direction computed during the last iteration
 		}
-
 		//-------------------------
 		//Intersection Computation
-
-		if(useCache && bounce == 0)//use cache for the camRay (same for each pass)
+		if(bounce == 0)//use cache for the camRay (same for each pass)
 		{
 			hit = cache;
 		}
@@ -108,63 +102,40 @@ std::vector<HitInfo> Engine::buildIndirectLightStructure(Ray camRay, HitInfo &ca
 			statCounter->addCriteriaOccurence(3);
 			return structure;
 		}
-
-
 	}while(hit.material.emission == false && bounce <= maxBounce);
 	return structure;
 }
 
 //compute all the intersections from camera to the first light hit, bouncing off objects
-std::vector<HitInfo> Engine::buildDirectLightStructure(Ray camRay, HitInfo &cache) {
+std::vector<HitInfo> Engine::buildDirectLightStructure(Ray & camRay, HitInfo &cache) {
 	std::vector<HitInfo> structure;
 	HitInfo hit{};
 	int bounce = 0;
-	int max = 1;
 
 	//fire bounce rays until it reaches a light source
 	statCounter->addCriteriaOccurence(0);//number of rays from the camera
-	do
+	//-------------------------
+	//Ray construction
+	Ray r;
+	r = camRay;
+	//-------------------------
+	//Intersection Computation
+	hit = cache;
+
+	if(hit.hitSomething)//hit something: bounce the ray
 	{
-		//-------------------------
-		//Ray construction
-		Ray r;
-		if(structure.size() == 0) //first ray is the ray from the camera
-		{
-				r = camRay;
-		}
-		else
-		{
-			r = structure.at(structure.size()-1).r;//otherwise, we cast a ray starting from the intersection, in the direction computed during the last iteration
-		}
+		bounceRay(hit,r,bounce,true,structure);
+		bounce++;
+	}
+	else//hit nothing, stop
+	{
+		hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
+		hit.material = Material(Color(1,1,1),true,0);
+		structure.push_back(hit);
+		statCounter->addCriteriaOccurence(3);
+		return structure;
+	}
 
-		//-------------------------
-		//Intersection Computation
-
-		if(useCache && bounce == 0)//use cache for the camRay (same for each pass)
-		{
-			hit = cache;
-		}
-		else
-		{
-			hit = rayCast(r);
-		}
-
-		if(hit.hitSomething)//hit something: bounce the ray
-		{
-			bounceRay(hit,r,bounce,true,structure);
-			bounce++;
-		}
-		else//hit nothing, stop
-		{
-			hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
-			hit.material = Material(Color(1,1,1),true,0);
-			structure.push_back(hit);
-			statCounter->addCriteriaOccurence(3);
-			return structure;
-		}
-
-
-	}while(hit.material.emission == false && bounce <= max);
 	return structure;
 }
 
@@ -213,15 +184,11 @@ void Engine::bounceRay(HitInfo hit, Ray r, int bounce, bool directLight, std::ve
 //_______________________________
 //computeLightAlongRay
 
-
-
-
-
 //-----------------------------------------------------
 //A REECRIRE
 //-----------------------------------------------------
 //compute pixel color from the multiple data gathered by buildIntersectionStructure(...)
-Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
+Color Engine::computeLightAlongRay(Ray &camRay, HitInfo &cache) {
 
 	//std::vector<HitInfo> directStructure;
 	std::vector<HitInfo> directStructure = buildDirectLightStructure(camRay, cache);
@@ -229,24 +196,22 @@ Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
 
 	if(directStructure.size() > 0 && directStructure.at(directStructure.size()-1).r.dir == Vector3(0,0,0))
 	{
-		for(signed int i =directStructure.size()-1; i>=0; i--)//we travel across the structure backward
+		for (auto it = directStructure.rbegin() ; it != directStructure.rend(); ++it)//we travel across the structure backward
 		{
 			//last ray hits a light
-			if(i==directStructure.size()-1)
+			if(it==directStructure.rbegin())
 			{
-				outputDirect = directStructure.at(i).material.diffuse*directStructure.at(i).material.emissionPower;
+				outputDirect = it->material.diffuse*it->material.emissionPower;
 			}
 
 			else//at each bounce, the light intensity is absorbed (material dependent)
 			{
-
-
 				//version avec angles solides
-				Ray shadowRay = directStructure.at(i).r;
+				Ray shadowRay = it->r;
 				float Phi = Vector3::calcNorm(shadowRay.dir);
 				float invpdf = (2*3.14*(1-std::cos(Phi)));//uniform
 				//float invpdf = (3.14*std::pow(std::sin(Phi),2));//cosine
-				Vector3 v = directStructure.at(i).normal.normalize();
+				Vector3 v = it->normal.normalize();
 				float cosine = abs(Vector3::dot(v,shadowRay.dir.normalize()));//Absorption coef
 
 				/*
@@ -258,7 +223,7 @@ Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
 				float cosine = abs(Vector3::dot(v,shadowRay.dir.normalize()));//Absorption coef
 				*/
 
-				outputDirect = outputDirect*(1.0/(3.14))*directStructure.at(i).material.diffuse*(invpdf)*cosine; //uniform distrib
+				outputDirect = outputDirect*(1.0/(3.14))*it->material.diffuse*(invpdf)*cosine; //uniform distrib
 				//outputDirect = outputDirect*(1.0/(3.14))*directStructure.at(i).material.diffuse*(invpdf); //cosinus distrib
 			}
 		}
@@ -270,14 +235,14 @@ Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
 	Color outputIndirect = Color(0,0,0);
 		if(indirectStructure.size() > 0 && indirectStructure.at(indirectStructure.size()-1).r.dir == Vector3(0,0,0))
 		{
-			for(int i =indirectStructure.size()-1; i>=0; i--)//we travel across the structure backward
+			for(auto it = indirectStructure.rbegin() ; it != indirectStructure.rend(); ++it)//we travel across the structure backward
 			{
 				//last ray hits a light
-				if(i==indirectStructure.size()-1) outputIndirect = indirectStructure.at(i).material.diffuse*indirectStructure.at(i).material.emissionPower;
+				if(it==indirectStructure.rbegin()) outputIndirect = it->material.diffuse*it->material.emissionPower;
 
 				else//at each bounce, the light intensity is absorbed (material dependent)
 				{
-					outputIndirect = outputIndirect*indirectStructure.at(i).material.diffuse; //cosinus distrib
+					outputIndirect = outputIndirect*it->material.diffuse; //cosinus distrib
 				}
 			}
 		}
@@ -297,10 +262,9 @@ Color Engine::computeLightAlongRay(Ray camRay, HitInfo &cache) {
 HitInfo Engine::rayCast(Ray r) {
 	std::vector<HitInfo> allHit;
 
-	for(Object o : objectList)
+	for(auto it = objectList.begin(); it != objectList.end(); it++)
 	{
-
-		HitInfo hit = intersectObject(o,r);
+		HitInfo hit = intersectObject(*it,r);
 		if(hit.hitSomething)
 		{
 			allHit.push_back(hit);
@@ -322,7 +286,7 @@ HitInfo Engine::rayCast(Ray r) {
 //perform a ray cast against one object
 //return true if the ray hit something
 //all useful info (coord, material ect...) are stored in the HitInfo object provided
-HitInfo Engine::intersectObject(Object obj, Ray r) {
+HitInfo Engine::intersectObject(Object &obj, Ray r) {
 	std::vector<HitInfo> allHit;
 
 	if(useAccelerationStructure)
@@ -331,10 +295,10 @@ HitInfo Engine::intersectObject(Object obj, Ray r) {
 	}
 
 	//fill the vector with the coord of all intersection points (in ray space)
-	for(auto tri : obj.faces)
+	for(auto it = obj.faces.begin(); it != obj.faces.end(); it++)
 	{
 		HitInfo h{};
-		h = tri.intersect(r);
+		h = it->intersect(r);
 		if(h.hitSomething)
 		{
 			allHit.push_back(h);
