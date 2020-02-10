@@ -106,3 +106,34 @@ Vector3 Triangle::calcNormal() {
 Vector3 Triangle::calcCenter() {
 	return (a +b +c)/3.0;
 }
+
+Box Triangle::boundingBox(std::vector<Triangle> T) {
+	//max
+	Vector3 vMax = T.at(0).a;
+	Vector3 vMin = T.at(0).a;
+
+	std::vector<float> X;
+	std::vector<float> Y;
+	std::vector<float> Z;
+
+
+	for(auto it = T.begin(); it != T.end();it++)
+	{
+		X.push_back(it->a.x);X.push_back(it->b.x);X.push_back(it->c.x);
+		Y.push_back(it->a.y);Y.push_back(it->b.y);Y.push_back(it->c.y);
+		Z.push_back(it->a.z);Z.push_back(it->b.z);Z.push_back(it->c.z);
+	}
+
+	for(int i = 0; i< T.size();i++)
+	{
+		if(vMin.x < X.at(i)) vMin.x = X.at(i);
+		if(vMin.y < Y.at(i)) vMin.y = Y.at(i);
+		if(vMin.z < Z.at(i)) vMin.z = Z.at(i);
+
+		if(vMax.x < X.at(i)) vMax.x = X.at(i);
+		if(vMax.y < Y.at(i)) vMax.y = Y.at(i);
+		if(vMax.z < Z.at(i)) vMax.z = Z.at(i);
+	}
+
+	return Box(vMin,vMax);
+}

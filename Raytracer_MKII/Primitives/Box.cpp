@@ -64,5 +64,37 @@ bool Box::intersect(const Ray &r, float &t)
        }
 
        return true;
- }
+}
 
+Box Box::boundingBox(std::vector<Box> B) {
+
+	//max
+	Vector3 vMax = B.at(0).max;
+	Vector3 vMin = B.at(0).min;
+
+	std::vector<float> X;
+	std::vector<float> Y;
+	std::vector<float> Z;
+
+
+	for(auto it = B.begin(); it != B.end();it++)
+	{
+		X.push_back(it->max.x);X.push_back(it->min.x);
+		Y.push_back(it->max.y);Y.push_back(it->min.y);
+		Z.push_back(it->max.z);Z.push_back(it->min.z);
+	}
+
+	for(int i = 0; i< B.size();i++)
+	{
+		if(vMin.x < X.at(i)) vMin.x = X.at(i);
+		if(vMin.y < Y.at(i)) vMin.y = Y.at(i);
+		if(vMin.z < Z.at(i)) vMin.z = Z.at(i);
+
+		if(vMax.x < X.at(i)) vMax.x = X.at(i);
+		if(vMax.y < Y.at(i)) vMax.y = Y.at(i);
+		if(vMax.z < Z.at(i)) vMax.z = Z.at(i);
+	}
+
+	return Box(vMin,vMax);
+
+}

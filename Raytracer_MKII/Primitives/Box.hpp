@@ -17,6 +17,8 @@ public:
 	bool intersect(const Ray &r, float &t);
 
 	Vector3 min,max,center;
+
+	static Box boundingBox(std::vector<Box> B);
 };
 
 #endif /* BOX_HPP_ */

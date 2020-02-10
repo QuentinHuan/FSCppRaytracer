@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-
-
 class Utility {
 public:
 	Utility();
@@ -19,6 +17,7 @@ public:
 	static size_t split(const std::string &txt, std::vector<std::string> &strs, char ch);
 	static float min(std::vector<float> array);
 	static float max(std::vector<float> array);
+
 
 };
 
