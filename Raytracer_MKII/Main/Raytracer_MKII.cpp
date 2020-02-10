@@ -18,6 +18,7 @@
 
 #include "Engine.hpp"
 #include "Statistics.hpp"
+#include "BVH.hpp"
 using namespace std;
 
 int resX = 256, resY=resX;
@@ -47,11 +48,17 @@ int main() {
 
 	vector<HitInfo> cache;
 	cache.reserve(resX*resY);
+
+	BVH bvh(objList.at(0).faces);
+
 	//--------------------------------------------
 	//Main Loop
 
 	//cache building:
 	//for each pixel
+
+	//cout  << bvh.tree->toString();
+
 	int counter = 0;
 	for(int i=0;i<resX;i++)
 	{

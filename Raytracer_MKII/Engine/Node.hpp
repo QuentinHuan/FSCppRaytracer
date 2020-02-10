@@ -8,6 +8,7 @@
 #ifndef NODE_HPP_
 #define NODE_HPP_
 #include <vector>
+#include <string>
 #include "Triangle.hpp"
 
 class Node {
@@ -17,10 +18,14 @@ public:
 	std::vector<Node*> childs;
 
 	Triangle triangle;
+	Vector3 centroid;
 
 	Node(Node* parent, Triangle triangle);
 	Node(std::vector<Node*> childs);
+	std::string toString();
 
+private:
+	void toString(Node * n, std::string s);
 
 
 };

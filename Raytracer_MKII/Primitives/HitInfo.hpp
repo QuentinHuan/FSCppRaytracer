@@ -12,11 +12,13 @@
 
 class HitInfo {
 public:
-	float intersection;
-	bool hitSomething;
+
 	Ray r;
-	Vector3 normal;
+	float intersection;
 	Material material;
+	Vector3 normal;
+
+	bool hitSomething;
 	HitInfo();
 	HitInfo(Ray r, float intersection, Material material, Vector3 normal);
 

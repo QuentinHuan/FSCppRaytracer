@@ -9,18 +9,19 @@
 #ifndef BVH_HPP_
 #define BVH_HPP_
 #include "Node.hpp"
+#include <list>
 
 class BVH {
 public:
 	std::vector<Triangle> triangleList;
 
 	Node* tree;
-	std::vector<Node> NodeList;
+	std::list<Node> NodeList;
 
 	BVH(std::vector<Triangle> triangleList);
 	void build(std::vector<Node*> Nodes);
 
-	std::vector<Node*> trierNode(std::vector<Node*> Nodes, Node* refNode);
+	std::vector<Node*> kNearestNeighbours(std::vector<Node*> Nodes, Node * refNode,int k);
 
 };
 

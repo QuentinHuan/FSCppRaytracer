@@ -7,7 +7,7 @@
 
 #include "Utility.hpp"
 
-#include <random>;
+#include <random>
 
 Utility::Utility() {
 	// TODO Auto-generated constructor stub
