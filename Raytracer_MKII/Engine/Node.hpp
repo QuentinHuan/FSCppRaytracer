@@ -27,7 +27,7 @@ public:
 	std::string toString();
 
 private:
-	void toString(Node * n, std::string s);
+	std::string toString(Node * n, std::string s);
 
 
 };

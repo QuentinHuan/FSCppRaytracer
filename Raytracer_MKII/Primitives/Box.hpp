@@ -9,14 +9,18 @@
 #define BOX_HPP_
 #include "Vector3.hpp"
 #include "Ray.hpp"
+#include "HitInfo.hpp"
 
 class Box {
 public:
 	Box();
 	Box(Vector3 min,Vector3 max);
-	bool intersect(const Ray &r, float &t);
+	bool intersect(const Ray &r);
+	HitInfo intersectDebug(const Ray &r);
 
 	Vector3 min,max,center;
+
+	Vector3 bounds[2];
 
 	static Box boundingBox(std::vector<Box> B);
 };

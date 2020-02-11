@@ -124,11 +124,11 @@ Box Triangle::boundingBox(std::vector<Triangle> T) {
 		Z.push_back(it->a.z);Z.push_back(it->b.z);Z.push_back(it->c.z);
 	}
 
-	for(int i = 0; i< T.size();i++)
+	for(int i = 0; i< T.size()*3;i++)
 	{
-		if(vMin.x < X.at(i)) vMin.x = X.at(i);
-		if(vMin.y < Y.at(i)) vMin.y = Y.at(i);
-		if(vMin.z < Z.at(i)) vMin.z = Z.at(i);
+		if(vMin.x > X.at(i)) vMin.x = X.at(i);
+		if(vMin.y > Y.at(i)) vMin.y = Y.at(i);
+		if(vMin.z > Z.at(i)) vMin.z = Z.at(i);
 
 		if(vMax.x < X.at(i)) vMax.x = X.at(i);
 		if(vMax.y < Y.at(i)) vMax.y = Y.at(i);

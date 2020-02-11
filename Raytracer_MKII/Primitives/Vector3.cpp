@@ -42,12 +42,7 @@ float Vector3::dot(const Vector3 & u, const Vector3 & v) {
 
 Vector3 Vector3::cross(const Vector3 & u, const Vector3 & v)
 {
-	Vector3 result;
-	result.x = u.y*v.z - u.z*v.y;
-	result.y = u.z*v.x - u.x*v.z;
-	result.z = u.x*v.y - u.y*v.x;
-
-	return result;
+	return Vector3(u.y*v.z - u.z*v.y, u.z*v.x - u.x*v.z, u.x*v.y - u.y*v.x);
 }
 
 float Vector3::calcNorm(Vector3 v) {

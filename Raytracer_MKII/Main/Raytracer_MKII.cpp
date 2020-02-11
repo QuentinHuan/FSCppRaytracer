@@ -32,24 +32,42 @@ int main() {
 
 	//scene Data
 	std::vector<Object> objList;
-	objList.push_back(Object("Cornell box.obj"));
+	//objList.push_back(Object("Cornell box.obj"));
 	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
-	//objList.push_back(Object("FurnaceHD.obj"));
+	objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
 
 	Camera cam(Vector3(-0.4,-2,0), resX,resY,3.14/4.0,1);
 
 	//Engine declaration
+
+	BVH bvh(objList.at(0).faces);
+
 	Image oneSampleImg(resX,resY);
 	Image imgFinal(resX,resY);
 	Statistics statCounter{};
-	Engine engine(objList, statCounter,maxBounce);
+	Engine engine(objList, statCounter,maxBounce,bvh);
 
 	vector<HitInfo> cache;
 	cache.reserve(resX*resY);
 
-	BVH bvh(objList.at(0).faces);
+	vector<float> f = vector<float>();
+	f.push_back(1);f.push_back(2);f.push_back(3);
+
+	vector<float> f2 = vector<float>();
+	f2.push_back(4);f2.push_back(5);f2.push_back(6);
+
+	f.reserve( f.size() + f2.size());
+	f.insert( f.end(), f2.begin(), f2.end());
+
+
+	vector<Triangle> T = vector<Triangle>();
+	T.push_back(objList.at(0).faces.at(0));
+	Box bb = Triangle::boundingBox(T);
+
+	int sizetree = bvh.numberOfNode(bvh.tree,0);
+
 
 	//--------------------------------------------
 	//Main Loop
@@ -57,7 +75,7 @@ int main() {
 	//cache building:
 	//for each pixel
 
-	//cout  << bvh.tree->toString();
+	cout  << "bvh build done in " << t.elapsed() << "sec" << std::endl;
 
 	int counter = 0;
 	for(int i=0;i<resX;i++)

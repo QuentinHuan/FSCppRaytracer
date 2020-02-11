@@ -13,6 +13,7 @@ class Ray {
 public:
 	Vector3 dir,pos;
 	Vector3 invDir;
+	int sign[3];
 	Ray();
 	Ray(Vector3 dir, Vector3 pos);
 };

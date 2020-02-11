@@ -17,7 +17,7 @@
 #include "Statistics.hpp"
 #include "Timer.hpp"
 #include "Utility.hpp"
-
+#include "BVH.hpp"
 
 
 class Engine {
@@ -25,7 +25,8 @@ private:
 
 	//rendering properties
 	int maxBounce;
-	bool useAccelerationStructure = false;
+	bool useAccelerationStructure = 1;
+	bool debugBVH = 0;
 
 	//random generator
 	std::default_random_engine generator;
@@ -58,10 +59,12 @@ private:
 
 	float triangleViewAngle(Triangle t, Vector3 viewerPosition);
 
+	BVH bvh;
+
 public:
 	//fonctions------------------------------------------------
 	Engine();
-	Engine(std::vector<Object> & objectList, Statistics &statCounter,int maxBounce);
+	Engine(std::vector<Object> & objectList, Statistics &statCounter,int maxBounce, BVH bvh);
 	Color rayTrace(Ray camRay, HitInfo &cache);
 	HitInfo buildCache(Ray r);
 

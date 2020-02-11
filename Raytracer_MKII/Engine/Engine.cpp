@@ -7,7 +7,7 @@
 
 #include "Engine.hpp"
 
-Engine::Engine(std::vector<Object> &objectList, Statistics &statCounter,int maxBounce) : objectList(objectList) {
+Engine::Engine(std::vector<Object> &objectList, Statistics &statCounter,int maxBounce, BVH bvh) : objectList(objectList), bvh(bvh) {
 
 		generator = std::default_random_engine();
 		distribution = std::uniform_real_distribution<float>(0,1.0);
@@ -95,8 +95,8 @@ std::vector<HitInfo> Engine::buildIndirectLightStructure(Ray & camRay, HitInfo &
 		else//hit nothing, stop
 		{
 			hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
-			//hit.material = Material(Color(1,1,1),true,1);
-			hit.material =lightTriangleList.at(0).material;
+			hit.material = Material(Color(1,1,1),true,1);
+			//hit.material =lightTriangleList.at(0).material;
 			hit.material.emissionPower = 1;
 			structure.push_back(hit);
 			statCounter->addCriteriaOccurence(3);
@@ -288,22 +288,73 @@ HitInfo Engine::rayCast(Ray r) {
 //all useful info (coord, material ect...) are stored in the HitInfo object provided
 HitInfo Engine::intersectObject(Object &obj, Ray r) {
 	std::vector<HitInfo> allHit;
+	std::vector<Triangle*> Tref = std::vector<Triangle*>();
+	std::vector<Triangle> T = std::vector<Triangle>();
+	std::vector<Box> B = std::vector<Box>();
+
+	if(useAccelerationStructure)
+	{
+		if(debugBVH)
+		{
+			B = bvh.testRayDEBUG(r,8);
+		}
+		else
+		{
+			Tref = bvh.testRay(r);
+		}
+	}
+	else
+	{
+		T = obj.faces;
+	}
 
 	if(useAccelerationStructure)
 	{
 
+		//fill the vector with the coord of all intersection points (in ray space)
+		for(auto it = Tref.begin(); it != Tref.end(); it++)
+		{
+			HitInfo h{};
+			h = (*it)->intersect(r);
+			if(h.hitSomething)
+			{
+				allHit.push_back(h);
+			}
+		}
+
+	}
+	else
+	{
+
+		//fill the vector with the coord of all intersection points (in ray space)
+		for(auto it = T.begin(); it != T.end(); it++)
+		{
+			HitInfo h{};
+			h = (*it).intersect(r);
+			if(h.hitSomething)
+			{
+				allHit.push_back(h);
+			}
+		}
+
 	}
 
-	//fill the vector with the coord of all intersection points (in ray space)
-	for(auto it = obj.faces.begin(); it != obj.faces.end(); it++)
+	if(debugBVH)
 	{
-		HitInfo h{};
-		h = it->intersect(r);
-		if(h.hitSomething)
+
+		//fill the vector with the coord of all intersection points (in ray space)
+		for(auto it = B.begin(); it != B.end(); it++)
 		{
-			allHit.push_back(h);
+			HitInfo h{};
+			h = it->intersectDebug(r);
+			if(h.hitSomething)
+			{
+				allHit.push_back(h);
+			}
 		}
+
 	}
+
 	if(allHit.size() > 0)
 	{
 		return HitInfo::sortForeground(allHit);

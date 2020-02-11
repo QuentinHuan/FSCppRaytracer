@@ -38,21 +38,22 @@ Node::Node(std::vector<Node*> childs) : childs(childs), triangle(),parent(0) {
 }
 
 std::string Node::toString() {
-	toString(this, "");
-	return "";
+
+	return toString(this, "");
 }
 
-void Node::toString(Node *n, std::string s) {
+std::string Node::toString(Node *n, std::string s) {
 
-	for(int i =0; i<n->childs.size();i++)
+	for(auto it = n->childs.begin(); it != n->childs.end();it++)
 	{
-		toString(n->childs.at(i),s);
+		s = toString(*it,s);
 	}
 	if(n->childs.size() == 0)
 	{
 		//s = s + std::to_string(n->triangle.a.x) + "\n";
 		//return s;
-		std::printf("%s\n",std::to_string(n->triangle.a.x).c_str());
+		s = s + std::to_string(n->triangle.a.x) + "\n";
+		return s;
 	}
-
+	return s;
 }

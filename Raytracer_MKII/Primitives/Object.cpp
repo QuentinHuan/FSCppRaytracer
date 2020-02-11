@@ -113,7 +113,7 @@ Object Object::load(std::string filename) {
 	    	 switch(matCounter)
 	    	 {
 	    	 case 0:
-	    		 mat = Material(Color(1,1,1)*1);
+	    		 mat = Material(Color(1,1,1)*0.5);
 	    		 break;
 	    	 case 1:
 	    		 mat = Material(Color(1,0,0));
