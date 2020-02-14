@@ -34,15 +34,14 @@ void Camera::calcFocal() {
 }
 
 Ray Camera::camRay(int pixelX, int pixelY) {
-	Ray r {};
+
 
 	//dimension de la cam
 	//pas terrible... a revoir
 	float pasX = size / resX;
 	float pasY = pasX;
 	Vector3 pixelCoord = Vector3(pixelX*pasX - size/2,0,pixelY*pasY - size/2);
-	r.dir = (position + pixelCoord) - focal;
-	r.pos = focal;
+	Ray r ( (position + pixelCoord) - focal, focal);
 	//r.dir = Vector3(0,1,0);
 	//r.pos = position + pixelCoord;
 

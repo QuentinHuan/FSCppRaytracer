@@ -1,54 +1,33 @@
 /*
  * Node.hpp
  *
- *  Created on: Oct 3, 2019
+ *  Created on: Feb 5, 2020
  *      Author: huan
  */
-
 #pragma once
 #ifndef NODE_HPP_
 #define NODE_HPP_
-#include "Triangle.hpp"
 #include <vector>
+#include <string>
+#include "Triangle.hpp"
 #include "Box.hpp"
 
 class Node {
-
-private:
-	Vector3 planeOrigin,planeNormal, treeCenter;
-	bool direct;
-	float scale;
-
-	int getDepth();
-	void addRChild(Node *n);
-	void addLChild(Node *n);
-	void addPlane(bool direct);
-	void addBox(bool direct);
-	int isTriangleInside(Triangle t);
-	bool isVector3Inside(Vector3 t);
-
 public:
 
-	Node();
-	Node(Node *father, bool leaf, bool origin, bool direct, float scale);
-	Node(std::vector<Triangle> list, Node *father, bool leaf, bool origin, bool direct, float scale, Vector3 center);
+	Node* parent;
+	std::vector<Node*> childs;
 
-	int depth;
-	Node *rChild,*lChild;
-	Node *father;
-	bool leaf, origin;
+	Triangle triangle;
+	Vector3 centroid;
 	Box box;
 
-	std::vector<Triangle> triangles;
+	Node(Node* parent, Triangle triangle);
+	Node(std::vector<Node*> childs);
+	std::string toString();
 
-	void sort();
-
-
-
-
-
-
-
+private:
+	std::string toString(Node * n, std::string s);
 
 
 };

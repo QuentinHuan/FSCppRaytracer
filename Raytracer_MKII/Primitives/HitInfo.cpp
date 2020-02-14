@@ -7,19 +7,9 @@
 
 #include "HitInfo.hpp"
 
-HitInfo::HitInfo() {
-	this->r = Ray();
-	this->intersection = 0;
-	this->material = Material();
-	this->normal = Vector3();
-}
+HitInfo::HitInfo() : r(Ray()), intersection(0), material(Material()), normal(Vector3()),hitSomething(false){}
 
-HitInfo::HitInfo(Ray r, float intersection, Material material, Vector3 normal) {
-	this->r = r;
-	this->intersection = intersection;
-	this->material = material;
-	this->normal = normal;
-}
+HitInfo::HitInfo(Ray r, float intersection, Material material, Vector3 normal) : r(r), intersection(intersection), material(material), normal(normal),hitSomething(true){}
 
 
 HitInfo HitInfo::sortForeground(std::vector<HitInfo> array) {

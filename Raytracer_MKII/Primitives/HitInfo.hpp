@@ -8,15 +8,17 @@
 #ifndef HITINFO_HPP_
 #define HITINFO_HPP_
 #include "Ray.hpp"
-#include "Object.hpp"
 #include "Material.hpp"
 
 class HitInfo {
 public:
-	float intersection;
+
 	Ray r;
-	Vector3 normal;
+	float intersection;
 	Material material;
+	Vector3 normal;
+
+	bool hitSomething;
 	HitInfo();
 	HitInfo(Ray r, float intersection, Material material, Vector3 normal);
 

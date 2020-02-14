@@ -15,90 +15,129 @@
 #include "Material.hpp"
 #include <ctime>
 
-#include "BSP.hpp"
+
 #include "Engine.hpp"
 #include "Statistics.hpp"
+#include "BVH.hpp"
 using namespace std;
 
-int resX = 128, resY=resX;
-int spp = 1000;
+int resX = 256, resY=resX;
+int spp = 10;
 int maxBounce = 4;
-int maxBSPDepth = 3;
-
-bool debug = 0;
-bool useBSP = 0;
+int maxBSPDepth = 2;
 
 int main() {
-
-
-	float sceneScale = 2;
-	Vector3 offset;
-	int sizeObj,sizePartition;
 
 	Timer t{};
 
 	//scene Data
 	std::vector<Object> objList;
-	objList.push_back(Object("Cornell box.obj"));
+	//objList.push_back(Object("Cornell box.obj"));
+	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
-	//objList.push_back(Object("FurnaceHD.obj"));
+	objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
-	sizeObj = objList.at(0).faces.size();
 
 	Camera cam(Vector3(-0.4,-2,0), resX,resY,3.14/4.0,1);
 
-	//acceleration structure
-	sceneScale = objList.at(0).getScale()+0.001;
-	offset = objList.at(0).getCenter();
-	BSP tree = BSP(maxBSPDepth,objList.at(0).faces,sceneScale,offset);
-
-	sizePartition = tree.debugPartition().size();
-
-	if(debug)
-	{
-		objList.at(0).faces = tree.debugPartition();
-		useBSP = false;
-	}
-
-
-	sizePartition = objList.at(0).faces.size();
-
-	cout  <<"BSP Building done" << std::endl;
-
 	//Engine declaration
+
+	BVH bvh(objList.at(0).faces);
+
 	Image oneSampleImg(resX,resY);
 	Image imgFinal(resX,resY);
 	Statistics statCounter{};
-	Engine engine(objList, statCounter,tree,maxBounce,useBSP);
+	Engine engine(objList, statCounter,maxBounce,bvh);
+
+	vector<HitInfo> cache;
+	cache.reserve(resX*resY);
+
+	vector<float> f = vector<float>();
+	f.push_back(1);f.push_back(2);f.push_back(3);
+
+	vector<float> f2 = vector<float>();
+	f2.push_back(4);f2.push_back(5);f2.push_back(6);
+
+	f.reserve( f.size() + f2.size());
+	f.insert( f.end(), f2.begin(), f2.end());
+
+
+	vector<Triangle> T = vector<Triangle>();
+	T.push_back(objList.at(0).faces.at(0));
+	Box bb = Triangle::boundingBox(T);
+
+	int sizetree = bvh.numberOfNode(bvh.tree,0);
+
 
 	//--------------------------------------------
-	//PLACE HOLDER
+	//Main Loop
 
-	for(int n=1;n<=spp;n++)
+	//cache building:
+	//for each pixel
+
+	cout  << "bvh build done in " << t.elapsed() << "sec" << std::endl;
+
+	int counter = 0;
+	for(int i=0;i<resX;i++)
 	{
+
+		for(int j=0;j<resY;j++)
+		{
+			Ray r = cam.camRay(i,j);
+			cache.push_back(engine.buildCache(r));
+		}
+
+		if(i==0)
+		{
+			cout  << "[";
+		}
+		//cout  << (100.0*i)/(float)resX;
+		if(((100.0*i)/(float)resX) > 5*counter)
+		{
+			cout <<"|";
+			std::cout.flush();
+			counter++;
+		}
+		if(i==resX-1)
+		{
+			cout <<"]" << std::endl;
+		}
+	}
+	cout  <<"Cache Building done" << std::endl;
+
+
+	for(int n=1;n<=spp;n++)//for each sample
+	{
+		int counter=0;
+		//for each pixel
 		for(int i=0;i<resX;i++)
 		{
 			for(int j=0;j<resY;j++)
 			{
-				if(i == resX/2)
-				{
-
-				}
+				int pixelIndex = i*resX+j;
 				Ray r = cam.camRay(i,j);
-				HitInfo hit{};
 				Color pixel = Color(0,0,0);
 
-				pixel = pixel + engine.rayTrace(r);
-
-				oneSampleImg.array.at(i*resX+j) = pixel;
-
+				pixel = pixel + engine.rayTrace(r, cache.at(pixelIndex));
+				oneSampleImg.array.at(pixelIndex) = pixel;
 			}
 
-			//cout  << i << "/" << resX << std::endl;
-			if(i==170)
+			if(i==0)
 			{
-				cout  << "bug" << std::endl;
+				cout  << "[";
 			}
+			//cout  << (100.0*i)/(float)resX;
+			if(((100.0*i)/(float)resX) > 5*counter)
+			{
+				cout <<"|";
+				std::cout.flush();
+				counter++;
+			}
+			if(i==resX-1)
+			{
+				cout <<"]" << std::endl;
+			}
+
 		}
 
 		for(int i=0;i<resX;i++)
@@ -108,22 +147,22 @@ int main() {
 				imgFinal.array.at(i*resX+j) = ((imgFinal.array.at(i*resX+j)*(n-1.f)) + oneSampleImg.array.at(i*resX+j))*(float)(1.0/(n));
 			}
 		}
+
 		imgFinal.exportPPM("img.ppm",8);
-
-
-
 		cout  << n << "/" << spp <<"spp" << std::endl;
 	}
 	//PLACE HOLDER
 	//--------------------------------------------
 
 	statCounter.runtime = t.elapsed();
-
 	imgFinal.exportPPM("img.ppm",8);
 	cout << statCounter.toString(false) << endl;
+
 
 
 
 	printf("DONE");
 	return 0;
 }
+
+

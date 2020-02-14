@@ -8,14 +8,14 @@
 #ifndef OBJECT_HPP_
 #define OBJECT_HPP_
 
-#include "Triangle.hpp"
+
 #include <vector>
 #include <string>
 #include <fstream>
 #include <iostream>
 #include "Vector3.hpp"
 #include "Utility.hpp"
-
+#include "Triangle.hpp"
 
 class Object {
 public:
