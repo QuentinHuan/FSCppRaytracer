@@ -32,10 +32,10 @@ int main() {
 
 	//scene Data
 	std::vector<Object> objList;
-	//objList.push_back(Object("Cornell box.obj"));
+	objList.push_back(Object("Cornell box.obj"));
 	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
-	objList.push_back(Object("FurnaceHD.obj"));
+	//objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
 
 	Camera cam(Vector3(-0.4,-2,0), resX,resY,3.14/4.0,1);

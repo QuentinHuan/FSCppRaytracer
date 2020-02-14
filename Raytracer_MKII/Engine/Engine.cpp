@@ -42,8 +42,7 @@ HitInfo Engine::buildCache(Ray r) {
 
 //MAIN
 Color Engine::rayTrace(Ray camRay, HitInfo &cache) {
-	Color c = computeLightAlongRay(camRay,cache);
-	return c;
+	return computeLightAlongRay(camRay,cache);
 }
 
 
@@ -60,14 +59,13 @@ std::vector<HitInfo> Engine::buildIndirectLightStructure(Ray & camRay, HitInfo &
 	structure.reserve(maxBounce+1);
 	HitInfo hit{};
 	int bounce = 0;
-
+	Ray r;
 	//fire bounce rays until it reaches a light source
 	statCounter->addCriteriaOccurence(0);//number of rays from the camera
 	do
 	{
 		//-------------------------
 		//Ray construction
-		Ray r;
 		if(structure.size() == 0) //first ray is the ray from the camera
 		{
 				r = camRay;
@@ -89,16 +87,13 @@ std::vector<HitInfo> Engine::buildIndirectLightStructure(Ray & camRay, HitInfo &
 
 		if(hit.hitSomething)//hit something: bounce the ray
 		{
-			bounceRay(hit,r,bounce,false,structure);
+			bounceRay(hit,r,bounce,false,&structure);
 			bounce++;
 		}
 		else//hit nothing, stop
 		{
-			hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
-			hit.material = Material(Color(1,1,1),true,1);
-			//hit.material =lightTriangleList.at(0).material;
-			hit.material.emissionPower = 1;
-			structure.push_back(hit);
+			//Material material =lightTriangleList.at(0).material;
+			structure.emplace(structure.end(),Ray(), 0, Material(Color(1,1,1),true,0), Vector3());
 			statCounter->addCriteriaOccurence(3);
 			return structure;
 		}
@@ -122,59 +117,63 @@ std::vector<HitInfo> Engine::buildDirectLightStructure(Ray & camRay, HitInfo &ca
 	//Intersection Computation
 	hit = cache;
 
-	if(hit.hitSomething)//hit something: bounce the ray
+	while(bounce <= 1)
 	{
-		bounceRay(hit,r,bounce,true,structure);
-		bounce++;
+		if(bounce != 0) hit = rayCast(hit.r);
+		if(hit.hitSomething)//hit something: bounce the ray
+			{
+				bounceRay(hit,r,bounce,true,&structure);
+				bounce++;
+			}
+			else//hit nothing, stop
+			{
+				structure.emplace(structure.end(),Ray(), 0, Material(Color(1,1,1),true,0), Vector3());
+				statCounter->addCriteriaOccurence(3);
+				return structure;
+			}
 	}
-	else//hit nothing, stop
-	{
-		hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
-		hit.material = Material(Color(1,1,1),true,0);
-		structure.push_back(hit);
-		statCounter->addCriteriaOccurence(3);
-		return structure;
-	}
-
 	return structure;
 }
 
 
-void Engine::bounceRay(HitInfo hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> &structure) {
+void Engine::bounceRay(HitInfo &hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> *structure) {
 
 	if(directLight)
 	{
 		if(bounce == 0)//direct light shadowray
 		{
 			hit.r = generateShadowRay(hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);
-			structure.push_back(hit);
+			structure->push_back(hit);
 		}
 		else
 		{
 			if((hit.material.emission == true))//it's a light: stop
 			{
 				hit.r = Ray(Vector3(0,0,0),hit.calcIntersectionCoord());
-				structure.push_back(hit);
+				structure->push_back(hit);
+				return;
 			}
 			else//shadow
 			{
-				hit.r = Ray(Vector3(0,0,0),Vector3(0,0,0));
-				hit.material = Material(Color(0,0,0),true,0);
-				structure.push_back(hit);
+
+				structure->emplace(structure->end(),Ray(), 0, Material(Color(1,1,1),true,0), Vector3());
+				return;
 			}
 		}
 	}
 	else
 	{
-		if((hit.material.emission == true && bounce !=1))//it's a light: stop
+		if((hit.material.emission == true && bounce >= 1))//it's a light: stop
 		{
-			hit.r = Ray(Vector3(0,0,0),hit.calcIntersectionCoord());
-			structure.push_back(hit);
+				hit.r = Ray(Vector3(0,0,0),hit.calcIntersectionCoord());
+				structure->push_back(hit);
+				return;
+
 		}
 		else//otherwise, bounce
 		{
-			hit.r = Ray(importanceSampling(hit.normal),hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);//new bounce ray from the intersection point (+ a small offset to prevent self intersecting artifacts)
-			structure.push_back(hit);
+				hit.r = Ray(importanceSampling(hit.normal),hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold);//new bounce ray from the intersection point (+ a small offset to prevent self intersecting artifacts)
+				structure->push_back(hit);
 		}
 	}
 	return;
@@ -192,11 +191,11 @@ Color Engine::computeLightAlongRay(Ray &camRay, HitInfo &cache) {
 
 	//std::vector<HitInfo> directStructure;
 	std::vector<HitInfo> directStructure = buildDirectLightStructure(camRay, cache);
-	Color outputDirect = Color(0,0,0);
+	Color outputDirect = Color();
 
 	if(directStructure.size() > 0 && directStructure.at(directStructure.size()-1).r.dir == Vector3(0,0,0))
 	{
-		for (auto it = directStructure.rbegin() ; it != directStructure.rend(); ++it)//we travel across the structure backward
+		for (auto it = directStructure.rbegin() ; it != directStructure.rend(); it++)//we travel across the structure backward
 		{
 			//last ray hits a light
 			if(it==directStructure.rbegin())
@@ -208,11 +207,11 @@ Color Engine::computeLightAlongRay(Ray &camRay, HitInfo &cache) {
 			{
 				//version avec angles solides
 				Ray shadowRay = it->r;
-				float Phi = Vector3::calcNorm(shadowRay.dir);
-				float invpdf = (2*3.14*(1-std::cos(Phi)));//uniform
+				//float Phi = Vector3::calcNorm(shadowRay.dir);
+				//float invpdf = (2*3.14*(1-std::cos(0.0001)));//uniform
 				//float invpdf = (3.14*std::pow(std::sin(Phi),2));//cosine
 				Vector3 v = it->normal.normalize();
-				float cosine = abs(Vector3::dot(v,shadowRay.dir.normalize()));//Absorption coef
+				float cosine = Vector3::dot(v,shadowRay.dir.normalize());//Absorption coef
 
 				/*
 				//version avec echantillonage direct (NE MARCHE PAS)
@@ -223,7 +222,7 @@ Color Engine::computeLightAlongRay(Ray &camRay, HitInfo &cache) {
 				float cosine = abs(Vector3::dot(v,shadowRay.dir.normalize()));//Absorption coef
 				*/
 
-				outputDirect = outputDirect*(1.0/(3.14))*it->material.diffuse*(invpdf)*cosine; //uniform distrib
+				outputDirect = outputDirect*(1.0/(3.14))*it->material.diffuse*cosine; //uniform distrib
 				//outputDirect = outputDirect*(1.0/(3.14))*directStructure.at(i).material.diffuse*(invpdf); //cosinus distrib
 			}
 		}
@@ -242,12 +241,18 @@ Color Engine::computeLightAlongRay(Ray &camRay, HitInfo &cache) {
 
 				else//at each bounce, the light intensity is absorbed (material dependent)
 				{
-					outputIndirect = outputIndirect*it->material.diffuse; //cosinus distrib
+					Ray shadowRay = it->r;
+					float Phi = 3.14/2;
+					float invpdf = (3.14*std::pow(std::sin(Phi),2));//cosine
+					Vector3 v = it->normal.normalize();
+					float cosine = abs(Vector3::dot(v,shadowRay.dir.normalize()));//Absorption coef
+
+					outputIndirect = outputIndirect*it->material.diffuse*(1.0/(3.14))*invpdf; //cosinus distrib
 				}
 			}
 		}
 
-	return outputDirect*1 +outputIndirect*1;
+	return outputDirect*1 +outputIndirect*0;
 }
 
 //-------------------------------
@@ -288,6 +293,7 @@ HitInfo Engine::rayCast(Ray r) {
 //all useful info (coord, material ect...) are stored in the HitInfo object provided
 HitInfo Engine::intersectObject(Object &obj, Ray r) {
 	std::vector<HitInfo> allHit;
+	allHit.reserve(obj.faces.size());
 	std::vector<Triangle*> Tref = std::vector<Triangle*>();
 	std::vector<Triangle> T = std::vector<Triangle>();
 	std::vector<Box> B = std::vector<Box>();
@@ -494,7 +500,8 @@ Ray Engine::generateShadowRay(Vector3 origin) {
 
 
 		float Phi = triangleViewAngle(t, origin);
-		Vector3 direction = uniformRndInSolidAngle((t.calcCenter() - origin), Phi).normalize()*(Phi);//version angle solide
+		//float Phi = 0.01;
+		Vector3 direction = uniformRndInSolidAngle((t.calcCenter() - origin), Phi);//version angle solide
 		//Vector3 direction = uniformRndInSphericalTriangle(t,origin);//version direct sampling
 		//Vector3 direction = (t.calcCenter() - origin).normalize()*Phi;//adhoc shadowRay
 		Ray r = Ray(direction,origin);
