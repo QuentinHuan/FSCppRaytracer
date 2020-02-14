@@ -12,17 +12,17 @@ HitInfo::HitInfo() : r(Ray()), intersection(0), material(Material()), normal(Vec
 HitInfo::HitInfo(Ray r, float intersection, Material material, Vector3 normal) : r(r), intersection(intersection), material(material), normal(normal),hitSomething(true){}
 
 
-HitInfo HitInfo::sortForeground(std::vector<HitInfo> array) {
+HitInfo HitInfo::sortForeground(std::vector<HitInfo> &array) {
 
 	if(array.size() != 0)
 	{
 		HitInfo foreground = array.at(0);
 
-		for(HitInfo t : array)
+		for(auto it = array.begin(); it != array.end(); it++)
 		{
-			if(t.intersection< foreground.intersection)
+			if(it->intersection< foreground.intersection)
 			{
-				foreground = t;
+				foreground = *it;
 			}
 		}
 		return foreground;

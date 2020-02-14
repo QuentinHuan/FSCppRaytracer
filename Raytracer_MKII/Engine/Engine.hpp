@@ -25,7 +25,7 @@ private:
 
 	//rendering properties
 	int maxBounce;
-	bool useAccelerationStructure = 1;
+	bool useAccelerationStructure = 0;
 	bool debugBVH = 0;
 
 	//random generator
@@ -45,7 +45,7 @@ private:
 	std::vector<HitInfo> buildIndirectLightStructure(Ray & camRay, HitInfo &cache);
 	std::vector<HitInfo> buildDirectLightStructure(Ray & camRay, HitInfo &cache);
 
-	void bounceRay(HitInfo hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> &structure);
+	void bounceRay(HitInfo &hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> *structure);
 	Color computeLightAlongRay(Ray &camRay,HitInfo &cache);
 
 	HitInfo rayCast(Ray r);

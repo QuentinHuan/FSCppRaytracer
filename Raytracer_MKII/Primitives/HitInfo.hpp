@@ -22,7 +22,7 @@ public:
 	HitInfo();
 	HitInfo(Ray r, float intersection, Material material, Vector3 normal);
 
-	static HitInfo sortForeground(std::vector<HitInfo> array);
+	static HitInfo sortForeground(std::vector<HitInfo> &array);
 	Vector3 calcIntersectionCoord();
 
 };

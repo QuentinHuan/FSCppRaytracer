@@ -35,7 +35,7 @@ int BVH::numberOfNode(Node * n, int numb)
 	return numb;
 }
 
-bool contain(std::vector<Node*> A, Node* B)
+bool contain(std::vector<Node*> &A, Node* &B)
 {
 
 	for (int i = 0; i < A.size(); i++) {
