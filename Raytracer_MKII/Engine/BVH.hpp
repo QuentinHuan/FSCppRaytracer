@@ -23,11 +23,11 @@ public:
 
 	std::vector<Node*> kNearestNeighbours(std::vector<Node*> Nodes, Node * refNode,int k);
 
-	std::vector<Triangle*> testRay(Ray &r);
+	std::vector<Triangle> testRay(Ray &r);
 	std::vector<Box> testRayDEBUG(Ray r,int depthLim);
 	int numberOfNode(Node * n, int numb);
 private:
-	std::vector<Triangle*> testRay(Ray &r, Node *n,std::vector<Triangle*> * result);
+	void testRay(Ray &r, Node *n,std::vector<Triangle> * result);
 	std::vector<Box> testRayDEBUG(Ray r,Node *n,std::vector<Box> result,int depth,int depthLim);
 
 };

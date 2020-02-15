@@ -29,6 +29,7 @@ public:
 	static Vector3 cross(const Vector3 & u, const Vector3 & v);
 	static float calcNorm(Vector3 v);
 
+	static Vector3 rotate(Vector3 axis,float angle, Vector3 v);
 	Vector3 normalize();
 };
 

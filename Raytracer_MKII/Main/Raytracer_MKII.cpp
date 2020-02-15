@@ -22,16 +22,18 @@
 using namespace std;
 
 int resX = 256, resY=resX;
-int spp = 10;
-int maxBounce = 4;
+int spp = 1;
+int maxBounce = 2;
 int maxBSPDepth = 2;
 
 int main() {
 
 	Timer t{};
 
+
 	//scene Data
 	std::vector<Object> objList;
+	std::vector<Triangle> lights;
 	objList.push_back(Object("Cornell box.obj"));
 	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
@@ -47,7 +49,17 @@ int main() {
 	Image oneSampleImg(resX,resY);
 	Image imgFinal(resX,resY);
 	Statistics statCounter{};
-	Engine engine(objList, statCounter,maxBounce,bvh);
+
+
+	for(auto it=objList.at(0).faces.begin(); it != objList.at(0).faces.end(); it++)
+	{
+		if(it->material.emission)
+		{
+			lights.push_back(*it);
+		}
+	}
+
+	Engine engine(objList.at(0).faces,lights, statCounter,maxBounce,bvh);
 
 	vector<HitInfo> cache;
 	cache.reserve(resX*resY);
@@ -64,11 +76,10 @@ int main() {
 
 	vector<Triangle> T = vector<Triangle>();
 	T.push_back(objList.at(0).faces.at(0));
-	Box bb = Triangle::boundingBox(T);
-
-	int sizetree = bvh.numberOfNode(bvh.tree,0);
 
 
+
+	double debugT = 0;
 	//--------------------------------------------
 	//Main Loop
 
@@ -103,24 +114,36 @@ int main() {
 			cout <<"]" << std::endl;
 		}
 	}
+
 	cout  <<"Cache Building done" << std::endl;
+
 
 
 	for(int n=1;n<=spp;n++)//for each sample
 	{
 		int counter=0;
 		//for each pixel
+		Timer debug{};
+
+
 		for(int i=0;i<resX;i++)
 		{
 			for(int j=0;j<resY;j++)
 			{
 				int pixelIndex = i*resX+j;
 				Ray r = cam.camRay(i,j);
-				Color pixel = Color(0,0,0);
 
-				pixel = pixel + engine.rayTrace(r, cache.at(pixelIndex));
+
+				Color pixel = engine.rayTrace(r, cache.at(pixelIndex));
+
+
 				oneSampleImg.array.at(pixelIndex) = pixel;
+
 			}
+
+
+			debugT += debug.elapsed();
+
 
 			if(i==0)
 			{
@@ -156,8 +179,8 @@ int main() {
 
 	statCounter.runtime = t.elapsed();
 	imgFinal.exportPPM("img.ppm",8);
-	cout << statCounter.toString(false) << endl;
-
+	cout << statCounter.toString(true) << endl;
+	//cout << "debug = " << statCounter.criteria.at(1) << endl;
 
 
 

@@ -112,8 +112,8 @@ std::vector<Node*> BVH::kNearestNeighbours(std::vector<Node*> Nodes, Node * refN
 return triee;
 }
 
-std::vector<Triangle*> BVH::testRay(Ray &r) {
-	std::vector<Triangle*> result = std::vector<Triangle*>();
+std::vector<Triangle> BVH::testRay(Ray &r) {
+	std::vector<Triangle> result = std::vector<Triangle>();
 	result.reserve(triangleList.size());
 	testRay(r,tree,&result);
 	return result;
@@ -126,11 +126,11 @@ std::vector<Box> BVH::testRayDEBUG(Ray r,int depthLim) {
 	return testRayDEBUG(r,tree,result,0,depthLim);
 }
 
-std::vector<Triangle*> BVH::testRay(Ray &r, Node *n, std::vector<Triangle*> * result) {
+void BVH::testRay(Ray &r, Node *n, std::vector<Triangle> * result) {
 
 	if(n->box.intersect(r))
 	{
-		if(n->childs.size() != 0)
+		if(!n->childs.empty())
 		{
 			for(auto it = n->childs.begin();it != n->childs.end();it++)
 			{
@@ -139,10 +139,10 @@ std::vector<Triangle*> BVH::testRay(Ray &r, Node *n, std::vector<Triangle*> * re
 		}
 		else
 		{
-			result->push_back(&n->triangle);
+			result->push_back(n->triangle);
 		}
 	}
-	return *result;
+	return;
 }
 
 std::vector<Box> BVH::BVH::testRayDEBUG(Ray r, Node *n,std::vector<Box> result,int depth,int depthLim) {

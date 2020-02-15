@@ -15,8 +15,8 @@ class Box {
 public:
 	Box();
 	Box(Vector3 min,Vector3 max);
-	bool intersect(const Ray &r);
-	HitInfo intersectDebug(const Ray &r);
+	bool intersect(Ray &r);
+	HitInfo intersectDebug(Ray &r);
 
 	Vector3 min,max,center;
 

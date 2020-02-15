@@ -25,9 +25,11 @@ Box::Box() {
 	bounds[1] = max;
 }
 
-bool Box::intersect(const Ray &r)
+bool Box::intersect(Ray &r)
  {
 	float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+	if(r.dir == Vector3()) return false;
 
        	tmin = (bounds[r.sign[0]].x - r.pos.x) * r.invDir.x;
        	tmax = (bounds[1-r.sign[0]].x - r.pos.x) * r.invDir.x;
@@ -56,7 +58,7 @@ bool Box::intersect(const Ray &r)
        return true;
 }
 
-HitInfo Box::intersectDebug(const Ray &r)
+HitInfo Box::intersectDebug(Ray &r)
  {
 		float t = 0;
 		HitInfo hit = HitInfo();

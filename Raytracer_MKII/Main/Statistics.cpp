@@ -15,7 +15,7 @@ Statistics::Statistics() {
 	c0.name = "Number of camera rays";
 
 	criteria c1;
-	c1.name = "rays hitting a light";
+	c1.name = "DEBUG";
 
 	criteria c2;
 	c2.name = "rays not hitting a light";
@@ -28,9 +28,9 @@ Statistics::Statistics() {
 
 	criteriaList.push_back(c0);
 	criteriaList.push_back(c1);
-	criteriaList.push_back(c2);
-	criteriaList.push_back(c3);
-	criteriaList.push_back(c4);
+	//criteriaList.push_back(c2);
+	//criteriaList.push_back(c3);
+	//criteriaList.push_back(c4);
 
 }
 
@@ -59,7 +59,7 @@ std::string Statistics::toString(bool verbose) {
 			{
 				s += "-----------------------\n";
 				s += c.name + " :\n";
-				s += std::to_string(((float)c.occurence/criteriaList.at(0).occurence)*100.0) + "%\n";
+				s += std::to_string(c.execTime) + "s\n";
 			}
 			else
 			{

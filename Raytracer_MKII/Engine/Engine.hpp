@@ -23,10 +23,21 @@
 class Engine {
 private:
 
+	//internal data structure
+	std::vector<Triangle> & TriangleList;
+	std::vector<Triangle> & lightTriangleList;
+	BVH bvh;
+	Statistics &statCounter;
+
+
+
 	//rendering properties
 	int maxBounce;
 	bool useAccelerationStructure = 0;
 	bool debugBVH = 0;
+
+	Material background;
+	float backgroundPower = 0.1;
 
 	//random generator
 	std::default_random_engine generator;
@@ -35,38 +46,25 @@ private:
 	//numericalConst
 	const float selfIntersectionThreshold = 0.000001;
 
-	//internal data structure
-	Statistics *statCounter;
-	std::vector<Object> & objectList;
-	std::vector<Triangle> lightTriangleList;
-	std::vector<HitInfo> camRayCache;
-
 	//fonctions------------------------------------------------
-	std::vector<HitInfo> buildIndirectLightStructure(Ray & camRay, HitInfo &cache);
-	std::vector<HitInfo> buildDirectLightStructure(Ray & camRay, HitInfo &cache);
-
-	void bounceRay(HitInfo &hit, Ray r, int bounce, bool directLight, std::vector<HitInfo> *structure);
-	Color computeLightAlongRay(Ray &camRay,HitInfo &cache);
-
 	HitInfo rayCast(Ray r);
+	HitInfo intersect(Ray &r);
 
-	HitInfo intersectObject(Object &obj, Ray r);
-	Ray generateShadowRay(Vector3 origin);
-	Vector3 importanceSampling(Vector3 normal);
-	Vector3 uniformRndInSolidAngle(Vector3 normal,float angle);
-	Vector3 uniformRndInTriangle(Triangle t);
-	Vector3 uniformRndInSphericalTriangle(Triangle t,Vector3 position);
 
-	float triangleViewAngle(Triangle t, Vector3 viewerPosition);
+	Color directLight(Ray &r,HitInfo &cache);
 
-	BVH bvh;
+	Color globalIllumination(Ray &r,HitInfo &cache);
+	Color GIBounce(HitInfo &hit);
+	Ray GIRay(HitInfo &hit);
+
+	Ray shadowRay(HitInfo &hit);
+	Ray cosineWeightedInSolidAngle(float angle,Vector3 direction, Vector3 position);
 
 public:
 	//fonctions------------------------------------------------
-	Engine();
-	Engine(std::vector<Object> & objectList, Statistics &statCounter,int maxBounce, BVH bvh);
-	Color rayTrace(Ray camRay, HitInfo &cache);
-	HitInfo buildCache(Ray r);
+	Engine(std::vector<Triangle> & triangleList,std::vector<Triangle> & lightTriangleList, Statistics &statCounter,int maxBounce, BVH bvh);
+	Color rayTrace(Ray &camRay, HitInfo &cache);
+	HitInfo buildCache(Ray &r);
 
 };
 

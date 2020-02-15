@@ -26,6 +26,8 @@ HitInfo Triangle::intersect(Ray &r) {
 
 	//Timer t {}; // statistics
 
+	if(r.dir == Vector3()) return HitInfo();
+
 	Vector3 u,v,k,n,d;
 	u = b - a;
 	v = c - a;

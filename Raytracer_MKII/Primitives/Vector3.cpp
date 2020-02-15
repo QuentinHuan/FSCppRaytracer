@@ -67,3 +67,9 @@ Vector3 Vector3::normalize() {
 	}
 }
 
+Vector3 Vector3::rotate(Vector3 axis, float angle, Vector3 v) {
+
+
+
+
+}
