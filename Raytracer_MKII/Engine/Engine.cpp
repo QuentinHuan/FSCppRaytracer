@@ -26,7 +26,7 @@ Ray Engine::shadowRay(HitInfo &hit) {
 
 			Vector3 origin = hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold;
 			//Ray r = Ray(t.calcCenter() - origin,origin);//adhoc shadowRay
-			Ray r = cosineWeightedInSolidAngle(3.14/100,t.calcCenter() - origin,origin);//cosine
+			Ray r = uniformInSolidAngle(triangleViewAngle(t,origin),t.calcCenter() - origin,origin);//cosine
 			return r;
 		}
 		else return Ray();
@@ -34,8 +34,8 @@ Ray Engine::shadowRay(HitInfo &hit) {
 
 Color Engine::rayTrace(Ray &camRay, HitInfo &cache) {
 
-	return directLight(camRay,cache);
-	//return globalIllumination(camRay,cache);
+	//return directLight(camRay,cache);
+	return globalIllumination(camRay,cache);
 	//return directLight(camRay,cache) +  globalIllumination(camRay,cache);
 }
 
@@ -58,11 +58,9 @@ Color Engine::directLight(Ray &r, HitInfo &cache) {
 			{
 				if(shadHit.material.emission)
 				{
-					float Phi = shadRay.distributionSolidAngle;
-					float invPDF = (3.14*std::pow(std::sin(Phi),2));//cos
 					light = shadHit.material.diffuse*shadHit.material.emissionPower;
 					//return hit.material.diffuse*Vector3::dot(hit.normal,shadRay.dir)*(1/3.14)*light;//adhoc
-					return hit.material.diffuse*(1/3.14)*light*invPDF;
+					return hit.material.diffuse*(1/3.14)*light*Vector3::dot(hit.normal,shadRay.dir);
 				}
 				else
 				{
@@ -118,6 +116,7 @@ Color Engine::globalIllumination(Ray &r, HitInfo &cache) {
 Color Engine::GIBounce(HitInfo &hit) {
 
 	Color light = Color(), final = hit.material.diffuse;
+
 	for(int bounce = 1; bounce <= maxBounce;bounce++)
 	{
 		Ray giRay = GIRay(hit);
@@ -133,6 +132,10 @@ Color Engine::GIBounce(HitInfo &hit) {
 		{
 			if(GIHit.material.emission)
 			{
+				if(hit.material.diffuse.g == 1 && hit.material.diffuse.r == 0 && hit.material.diffuse.b == 0 )
+				{
+					int a =2;
+				}
 				light = GIHit.material.diffuse*GIHit.material.emissionPower;
 				break;
 			}
@@ -145,6 +148,7 @@ Color Engine::GIBounce(HitInfo &hit) {
 		{
 			light = background.diffuse*background.emissionPower;
 		}
+		hit = GIHit;
 	}
 
 	return final * light;
@@ -165,25 +169,34 @@ Ray Engine::cosineWeightedInSolidAngle(float angle,Vector3 direction, Vector3 po
 	float Phi = std::acos(1-(u*(1-std::cos(angle))));//distribution: change pow to get various cos^n distrib over the sphere (pow=1 means uniform)
 	Vector3 localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi));
 
-	Vector3 X,Y,Z = direction;
-
-	//A REECRIRE
-	if(Z.y != 0) Y = Vector3(Z.y,-(Z.x + Z.z),Z.y);
-	else  Y = Vector3(Z.z,0,-Z.x);
-
-	X = Vector3::cross(Y,Z);
-
-	/*
-	Vector3 axis = Vector3::cross(direction,Vector3(0,0,1));
+	Vector3 axis = Vector3::cross(Vector3(0,0,1),direction).normalize();
 	float rotAngle = std::acos(Vector3::dot(direction.normalize(),Vector3(0,0,1)));
-	*/
 
+	Vector3 w = Quaternion::rotate(rotAngle,axis,localV);
 
-	Vector3 worldV =  Vector3(X.x * localV.x + Y.x * localV.y + Z.x * localV.z, X.y * localV.x + Y.y * localV.y + Z.y * localV.z, X.z * localV.x + Y.z * localV.y + Z.z * localV.z );
-
-	return Ray(worldV,position,angle);
+	return Ray(w,position,angle);
 }
 
+Ray Engine::uniformInSolidAngle(float angle,Vector3 direction, Vector3 position)
+{
+	float u = distribution(generator);//[,1]
+	float theta = distribution(generator)*2*3.14;//[0,2pi]
+
+
+	float Phi = u*angle;//distribution: change pow to get various cos^n distrib over the sphere (pow=1 means uniform)
+	Vector3 localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi));
+
+	Vector3 axis = Vector3::cross(Vector3(0,0,1),direction.normalize());
+	float rotAngle = std::acos(Vector3::dot(direction.normalize(),Vector3(0,0,1)));
+
+
+
+
+	//Vector3 worldV =  Vector3(X.x * localV.x + Y.x * localV.y + Z.x * localV.z, X.y * localV.x + Y.y * localV.y + Z.y * localV.z, X.z * localV.x + Y.z * localV.y + Z.z * localV.z );
+	Vector3 w = Quaternion::rotate(rotAngle,axis,localV);
+
+	return Ray(w,position,angle);
+}
 
 
 
@@ -235,6 +248,24 @@ HitInfo Engine::intersect(Ray &r) {
 	}
 }
 
+float Engine::triangleViewAngle(Triangle t, Vector3 viewerPosition) {
+
+	std::vector<float> result;
+	std::vector<Vector3> vertex;
+	vertex.push_back(t.a);vertex.push_back(t.b);vertex.push_back(t.c);
+
+	for(int i =0;i<3;i++)
+	{
+		Vector3 d = (t.calcCenter() - viewerPosition).normalize();
+		Vector3 da = (vertex.at(i) - viewerPosition).normalize();
+		float dot = Vector3::dot(da,d);
+
+		result.push_back(std::acos(dot));
+	}
+
+	return Utility::max(result);
+
+}
 
 
 HitInfo Engine::buildCache(Ray &r) {

@@ -15,6 +15,7 @@ Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Material material) :  a(a), 
 
 
 Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Vector3 normal, Material material) : a(a), b(b), c(c), normal(normal), material(material){
+	//this->normal = calcNormal();
 }
 
 //___________________
@@ -33,6 +34,8 @@ HitInfo Triangle::intersect(Ray &r) {
 	v = c - a;
 	k = r.dir;
 	n=Vector3::cross(u,v);
+
+	//n=normal;
 
 
 	d = r.pos - a;
@@ -102,7 +105,7 @@ HitInfo Triangle::intersectMoller(Ray &r) {
 }
 
 Vector3 Triangle::calcNormal() {
-	return Vector3::cross(a,b);
+	return Vector3::cross(b - a,c-a);
 }
 
 Vector3 Triangle::calcCenter() {

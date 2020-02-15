@@ -18,6 +18,7 @@
 #include "Timer.hpp"
 #include "Utility.hpp"
 #include "BVH.hpp"
+#include "Quaternion.hpp"
 
 
 class Engine {
@@ -59,6 +60,9 @@ private:
 
 	Ray shadowRay(HitInfo &hit);
 	Ray cosineWeightedInSolidAngle(float angle,Vector3 direction, Vector3 position);
+	Ray uniformInSolidAngle(float angle,Vector3 direction, Vector3 position);
+
+	float triangleViewAngle(Triangle t, Vector3 viewerPosition);
 
 public:
 	//fonctions------------------------------------------------

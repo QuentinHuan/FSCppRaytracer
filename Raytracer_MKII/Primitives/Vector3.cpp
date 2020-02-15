@@ -21,14 +21,7 @@ Vector3 Vector3::operator -(const Vector3 & v)
 
 Vector3 Vector3::operator *(float lf)
 {
-	Vector3 result;
-	result.x = lf*x;
-	result.y = lf*y;
-	result.z = lf*z;
-
-	return result;
-
-
+	return Vector3(lf*x,lf*y,lf*z);
 }
 
 Vector3 Vector3::operator /(const float lf)
@@ -67,9 +60,3 @@ Vector3 Vector3::normalize() {
 	}
 }
 
-Vector3 Vector3::rotate(Vector3 axis, float angle, Vector3 v) {
-
-
-
-
-}

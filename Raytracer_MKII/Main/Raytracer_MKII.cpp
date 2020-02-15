@@ -22,7 +22,7 @@
 using namespace std;
 
 int resX = 256, resY=resX;
-int spp = 1;
+int spp = 10;
 int maxBounce = 2;
 int maxBSPDepth = 2;
 
