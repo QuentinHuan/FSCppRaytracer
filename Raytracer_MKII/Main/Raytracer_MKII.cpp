@@ -23,13 +23,30 @@ using namespace std;
 
 int resX = 256, resY=resX;
 int spp = 10;
-int maxBounce = 2;
+int maxBounce = 4;
 int maxBSPDepth = 2;
+
+bool testQuaternion()
+{
+	Vector3 axe = Vector3(1,1,1);
+	float angle = 3.14159274;
+	Vector3 v(0.332588822,-0.219427302,0.91718936);
+
+	Vector3 v2 = Quaternion::rotate(angle,axe,v);
+
+	cout  << "test " << v2.x << " " << v2.y <<" " << v2.z << std::endl;
+
+
+
+}
+
+
 
 int main() {
 
 	Timer t{};
 
+	//testQuaternion();
 
 	//scene Data
 	std::vector<Object> objList;
@@ -59,10 +76,9 @@ int main() {
 		}
 	}
 
-	Engine engine(objList.at(0).faces,lights, statCounter,maxBounce,bvh);
+	Engine engine(resX,resY,cam,objList.at(0).faces,lights, statCounter,maxBounce,bvh);
 
-	vector<HitInfo> cache;
-	cache.reserve(resX*resY);
+
 
 	vector<float> f = vector<float>();
 	f.push_back(1);f.push_back(2);f.push_back(3);
@@ -86,36 +102,7 @@ int main() {
 	//cache building:
 	//for each pixel
 
-	cout  << "bvh build done in " << t.elapsed() << "sec" << std::endl;
 
-	int counter = 0;
-	for(int i=0;i<resX;i++)
-	{
-
-		for(int j=0;j<resY;j++)
-		{
-			Ray r = cam.camRay(i,j);
-			cache.push_back(engine.buildCache(r));
-		}
-
-		if(i==0)
-		{
-			cout  << "[";
-		}
-		//cout  << (100.0*i)/(float)resX;
-		if(((100.0*i)/(float)resX) > 5*counter)
-		{
-			cout <<"|";
-			std::cout.flush();
-			counter++;
-		}
-		if(i==resX-1)
-		{
-			cout <<"]" << std::endl;
-		}
-	}
-
-	cout  <<"Cache Building done" << std::endl;
 
 
 
@@ -123,44 +110,27 @@ int main() {
 	{
 		int counter=0;
 		//for each pixel
-		Timer debug{};
 
 
-		for(int i=0;i<resX;i++)
+
+		for(int i = 0; i <  resX*resY; i++)
 		{
-			for(int j=0;j<resY;j++)
-			{
-				int pixelIndex = i*resX+j;
-				Ray r = cam.camRay(i,j);
-
-
-				Color pixel = engine.rayTrace(r, cache.at(pixelIndex));
-
-
-				oneSampleImg.array.at(pixelIndex) = pixel;
-
-			}
-
-
-			debugT += debug.elapsed();
-
+			oneSampleImg.array.at(i) = engine.render(i);
 
 			if(i==0)
 			{
 				cout  << "[";
 			}
-			//cout  << (100.0*i)/(float)resX;
-			if(((100.0*i)/(float)resX) > 5*counter)
+			if(((100*i)/((float)resX*resY)) > 10*counter)
 			{
 				cout <<"|";
 				std::cout.flush();
 				counter++;
 			}
-			if(i==resX-1)
+			if(i==resX*resY-1)
 			{
 				cout <<"]" << std::endl;
 			}
-
 		}
 
 		for(int i=0;i<resX;i++)
@@ -171,7 +141,8 @@ int main() {
 			}
 		}
 
-		imgFinal.exportPPM("img.ppm",8);
+
+		//imgFinal.exportPPM("img.ppm",8);
 		cout  << n << "/" << spp <<"spp" << std::endl;
 	}
 	//PLACE HOLDER

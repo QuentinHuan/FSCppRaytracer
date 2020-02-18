@@ -28,6 +28,8 @@ public:
 	Vector3 calcNormal();
 	Vector3 calcCenter();
 
+	float area();
+
 	static Box boundingBox(std::vector<Triangle> T);
 
 };

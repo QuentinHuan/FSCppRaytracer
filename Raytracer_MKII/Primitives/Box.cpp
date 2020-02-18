@@ -57,6 +57,24 @@ bool Box::intersect(Ray &r)
 
        return true;
 }
+/*
+bool Box::intersect(Ray &r)
+ {
+
+	 Vector3 tmin = (min - r.pos) * r.invDir;
+	 Vector3 tmax = (max - r.pos) * r.invDir;
+
+	 float t0 = Vector3::min(tmin,tmax).maxComponent();
+	 float t1 = Vector3::max(tmin,tmax).minComponent();
+
+	 float dist;
+
+	 if(t0 > 0) dist= t0;
+	 else dist= t1;
+
+	 return (t0<=t1) && (dist > 0);
+
+}*/
 
 HitInfo Box::intersectDebug(Ray &r)
  {

@@ -47,6 +47,18 @@ bool Vector3::operator ==(Vector3 v) {
 	else return false;
 }
 
+float Vector3::maxComponent() {
+	return fmax(z,fmax(x,y));
+}
+
+float Vector3::minComponent() {
+	return fmin(z,fmin(x,y));
+}
+
+Vector3 Vector3::operator *(Vector3 v) {
+	return Vector3(x*v.x,y*v.y,z*v.z);
+}
+
 Vector3 Vector3::normalize() {
 
 	float n = calcNorm(Vector3(x,y,z));
@@ -60,3 +72,10 @@ Vector3 Vector3::normalize() {
 	}
 }
 
+Vector3 Vector3::min(Vector3 a, Vector3 b) {
+	return Vector3(fmin(a.x,b.x),fmin(a.y,b.y),fmin(a.z,b.z));
+}
+
+Vector3 Vector3::max(Vector3 a, Vector3 b) {
+	return Vector3(fmax(a.x,b.x),fmax(a.y,b.y),fmax(a.z,b.z));
+}

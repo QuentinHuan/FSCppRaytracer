@@ -25,11 +25,16 @@ public:
 	bool operator ==(Vector3 v);
 	Vector3 operator *(const float lf);
 	Vector3 operator /(const float lf);
+	Vector3 operator *(Vector3 v);
 	static float dot(const Vector3 & u, const Vector3 & v);
 	static Vector3 cross(const Vector3 & u, const Vector3 & v);
 	static float calcNorm(Vector3 v);
+	static Vector3 min(Vector3 a, Vector3 b);
+	static Vector3 max(Vector3 a, Vector3 b);
+	float maxComponent();
+	float minComponent();
 
-	static Vector3 rotate(Vector3 axis,float angle, Vector3 v);
+
 	Vector3 normalize();
 };
 

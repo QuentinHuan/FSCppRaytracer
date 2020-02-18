@@ -9,11 +9,15 @@
 
 
 
-Engine::Engine(std::vector<Triangle> & triangleList,std::vector<Triangle> & lightTriangleList, Statistics &statCounter,int maxBounce, BVH bvh) : TriangleList(triangleList),lightTriangleList(lightTriangleList), bvh(bvh),statCounter(statCounter),maxBounce(maxBounce) {
+Engine::Engine(int resX,int resY,Camera &cam,std::vector<Triangle> & triangleList,std::vector<Triangle> & lightTriangleList, Statistics &statCounter,int maxBounce, BVH bvh) : TriangleList(triangleList),lightTriangleList(lightTriangleList), bvh(bvh),statCounter(statCounter),maxBounce(maxBounce) {
 
+		this->resX = resX;
+		this->resY = resY;
 		generator = std::default_random_engine();
 		distribution = std::uniform_real_distribution<float>(0,1.0);
 		background = Material(Color(1,1,1), true, backgroundPower);
+		cache.reserve(resX*resY);
+		buildCache(cam);
 }
 
 
@@ -26,22 +30,25 @@ Ray Engine::shadowRay(HitInfo &hit) {
 
 			Vector3 origin = hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold;
 			//Ray r = Ray(t.calcCenter() - origin,origin);//adhoc shadowRay
-			Ray r = uniformInSolidAngle(triangleViewAngle(t,origin),t.calcCenter() - origin,origin);//cosine
+			Vector3 n = (uniformRndInTriangle(t) - origin);
+			float dist = Vector3::calcNorm(n);
+			Ray r = Ray(n.normalize(),origin,(t.area()/(dist*dist)));//cosine
+
 			return r;
 		}
 		else return Ray();
 }
 
-Color Engine::rayTrace(Ray &camRay, HitInfo &cache) {
+Color Engine::render(int pixel) {
 
-	//return directLight(camRay,cache);
-	return globalIllumination(camRay,cache);
-	//return directLight(camRay,cache) +  globalIllumination(camRay,cache);
+	//return directLight(pixel);
+	//return globalIllumination(camRay,cache);
+	return (directLight(pixel) + globalIllumination(pixel))*cache.at(pixel).material.diffuse;
 }
 
-Color Engine::directLight(Ray &r, HitInfo &cache) {
+Color Engine::directLight(int pixel) {
 
-	HitInfo hit = cache;
+	HitInfo hit = cache.at(pixel);
 	Color light, final;
 
 	if(hit.hitSomething)
@@ -60,7 +67,7 @@ Color Engine::directLight(Ray &r, HitInfo &cache) {
 				{
 					light = shadHit.material.diffuse*shadHit.material.emissionPower;
 					//return hit.material.diffuse*Vector3::dot(hit.normal,shadRay.dir)*(1/3.14)*light;//adhoc
-					return hit.material.diffuse*(1/3.14)*light*Vector3::dot(hit.normal,shadRay.dir);
+					return light * (1/3.14)*std::abs(Vector3::dot(hit.normal,shadRay.dir))*shadRay.distributionSolidAngle;
 				}
 				else
 				{
@@ -88,8 +95,8 @@ Color Engine::directLight(Ray &r, HitInfo &cache) {
 	}
 }
 
-Color Engine::globalIllumination(Ray &r, HitInfo &cache) {
-	HitInfo hit = cache;
+Color Engine::globalIllumination(int pixel) {
+	HitInfo hit = cache.at(pixel);
 
 
 	if(hit.hitSomething)
@@ -113,45 +120,82 @@ Color Engine::globalIllumination(Ray &r, HitInfo &cache) {
 	return Color();
 }
 
+
 Color Engine::GIBounce(HitInfo &hit) {
 
-	Color light = Color(), final = hit.material.diffuse;
+	Color light = Color(), final = Color(1,1,1);
+	bool hitLightSource = false;
+
+	float invPDF = (3.14);//cosine
 
 	for(int bounce = 1; bounce <= maxBounce;bounce++)
 	{
-		Ray giRay = GIRay(hit);
+		Ray giRay;
+		giRay = GIRay(hit);
+
 		HitInfo GIHit = intersect(giRay);
 
-		float Phi = giRay.distributionSolidAngle;
-		float invPDF = (3.14*std::pow(std::sin(Phi),2));//cosine
+
 
 		//float invPDF = 1.0;
-
-
 		if(GIHit.hitSomething)
 		{
 			if(GIHit.material.emission)
 			{
-				if(hit.material.diffuse.g == 1 && hit.material.diffuse.r == 0 && hit.material.diffuse.b == 0 )
+
+				if(bounce == 1)
 				{
-					int a =2;
+					return Color();
+
 				}
-				light = GIHit.material.diffuse*GIHit.material.emissionPower;
-				break;
+				else
+				{
+					final = final * GIHit.material.diffuse*GIHit.material.emissionPower*(1.0/3.14)*invPDF;
+					hitLightSource = true;
+					break;
+				}
 			}
 			else
 			{
+
+
 				final = final * GIHit.material.diffuse*(1.0/3.14)*invPDF;
 			}
 		}
 		else//background
 		{
-			light = background.diffuse*background.emissionPower;
+			final =  final * background.diffuse*background.emissionPower*(1.0/3.14)*invPDF;
+			hitLightSource = true;
+			break;
 		}
+
+
+		Ray shadRay = shadowRay(GIHit);
+		HitInfo shadHit= intersect(shadRay);
+		if(shadHit.hitSomething)
+		{
+			if(shadHit.material.emission)
+			{
+						final = final * shadHit.material.diffuse*shadHit.material.emissionPower*std::abs(Vector3::dot(shadHit.normal,shadRay.dir))*(shadRay.distributionSolidAngle)*(1/3.14)*invPDF;
+						hitLightSource = true;
+						break;
+			}
+			else
+			{
+				if(bounce==maxBounce) return Color(0,0,0);
+			}
+		}
+		else
+		{
+			if(bounce==maxBounce) return Color(0,0,0);
+		}
+
+
 		hit = GIHit;
+
 	}
 
-	return final * light;
+	return final;
 }
 
 Ray Engine::GIRay(HitInfo &hit) {
@@ -169,13 +213,19 @@ Ray Engine::cosineWeightedInSolidAngle(float angle,Vector3 direction, Vector3 po
 	float Phi = std::acos(1-(u*(1-std::cos(angle))));//distribution: change pow to get various cos^n distrib over the sphere (pow=1 means uniform)
 	Vector3 localV = Vector3( std::sin(Phi)*std::cos(theta),std::sin(Phi)*std::sin(theta),std::cos(Phi));
 
+
 	Vector3 axis = Vector3::cross(Vector3(0,0,1),direction).normalize();
-	float rotAngle = std::acos(Vector3::dot(direction.normalize(),Vector3(0,0,1)));
+	if(axis == Vector3()) return Ray(localV*direction.z,position,angle);
+	else
+	{
+		float rotAngle = std::acos(Vector3::dot(direction.normalize(),Vector3(0,0,1)));
 
-	Vector3 w = Quaternion::rotate(rotAngle,axis,localV);
+			Vector3 w = Quaternion::rotate(rotAngle,axis,localV);
 
-	return Ray(w,position,angle);
+			return Ray(w,position,angle);
+	}
 }
+
 
 Ray Engine::uniformInSolidAngle(float angle,Vector3 direction, Vector3 position)
 {
@@ -248,27 +298,62 @@ HitInfo Engine::intersect(Ray &r) {
 	}
 }
 
-float Engine::triangleViewAngle(Triangle t, Vector3 viewerPosition) {
 
-	std::vector<float> result;
-	std::vector<Vector3> vertex;
-	vertex.push_back(t.a);vertex.push_back(t.b);vertex.push_back(t.c);
+Vector3 Engine::uniformRndInTriangle(Triangle t) {
 
-	for(int i =0;i<3;i++)
-	{
-		Vector3 d = (t.calcCenter() - viewerPosition).normalize();
-		Vector3 da = (vertex.at(i) - viewerPosition).normalize();
-		float dot = Vector3::dot(da,d);
+	float u1 = distribution(generator);
 
-		result.push_back(std::acos(dot));
-	}
+	float u2 = distribution(generator);
 
-	return Utility::max(result);
+	float sqrt = std::pow(u1,0.5);
+
+	float x = 1- sqrt;
+
+	float y = u2*sqrt;
+
+
+
+	Vector3 U = t.b-t.a;
+
+	Vector3 V = t.c-t.a;
+
+
+
+	Vector3 v = t.a + (U*x + V*y);
+
+	return v;
 
 }
 
 
-HitInfo Engine::buildCache(Ray &r) {
+void Engine::buildCache(Camera &cam) {
 
-	return intersect(r);
+
+		int counter = 0;
+		for(int i=0;i<resX;i++)
+		{
+			for(int j=0;j<resY;j++)
+			{
+				Ray r = cam.camRay(i,j);
+				cache.push_back(intersect(r));
+			}
+
+			if(i==0)
+			{
+				std::cout  << "[";
+			}
+			//cout  << (100.0*i)/(float)resX;
+			if(((100.0*i)/(float)resX) > 5*counter)
+			{
+				std::cout <<"|";
+				std::cout.flush();
+				counter++;
+			}
+			if(i==resX-1)
+			{
+				std::cout <<"]" << std::endl;
+			}
+		}
+
+		std::cout  <<"Cache Building done" << std::endl;
 }

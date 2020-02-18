@@ -21,7 +21,7 @@ Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Vector3 normal, Material mat
 //___________________
 //intersectTri
 
-//utility fonction, compute the intersection point of a ray and with a tri
+//utility function, compute the intersection point of a ray and with a tri
 //output is the coord of the intersection point in ray space
 HitInfo Triangle::intersect(Ray &r) {
 
@@ -33,7 +33,7 @@ HitInfo Triangle::intersect(Ray &r) {
 	u = b - a;
 	v = c - a;
 	k = r.dir;
-	n=Vector3::cross(u,v);
+	n = normal*Vector3::calcNorm(Vector3::cross(u,v));
 
 	//n=normal;
 
@@ -74,7 +74,7 @@ HitInfo Triangle::intersect(Ray &r) {
 
 HitInfo Triangle::intersectMoller(Ray &r) {
 
-	float selfIntersectionThreshold = 0.0;
+	float selfIntersectionThreshold = 0.000000001;
 
 	Vector3 u,v;
 	u = b - a;
@@ -85,9 +85,9 @@ HitInfo Triangle::intersectMoller(Ray &r) {
 
 	// if the determinant is negative the triangle is backfacing
 	// if the determinant is close to 0, the ray misses the triangle
-	if (det < selfIntersectionThreshold) return HitInfo();
+	//if (det < selfIntersectionThreshold) return HitInfo();
 	// ray and triangle are parallel if det is close to 0
-	//if (fabs(det) < selfIntersectionThreshold) return HitInfo();
+	if (fabs(det) < selfIntersectionThreshold) return HitInfo();
 
 	float invDet = 1.0 /det;
 	Vector3 tvec = r.pos - a;
@@ -141,4 +141,11 @@ Box Triangle::boundingBox(std::vector<Triangle> T) {
 	}
 
 	return Box(vMin,vMax);
+}
+
+float Triangle::area() {
+
+	Vector3 u = a-b, v = a-c;
+	return Vector3::calcNorm(Vector3::cross(u,v))/2;
+
 }

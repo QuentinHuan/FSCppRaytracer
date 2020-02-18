@@ -60,7 +60,7 @@ void BVH::build(std::vector<Node*> Nodes) {
 		while(Nodes.size() != 0)
 		{
 			std::vector<Node*> fixed = std::vector<Node*>();
-			std::vector<Node*> k = kNearestNeighbours(Nodes,Nodes.at(0),2);
+			std::vector<Node*> k = kNearestNeighbours(Nodes,Nodes.at(0),20);
 			NodeList.push_back(Node(k));
 
 			for (int i = 0; i < Nodes.size(); i++) {
@@ -127,6 +127,8 @@ std::vector<Box> BVH::testRayDEBUG(Ray r,int depthLim) {
 }
 
 void BVH::testRay(Ray &r, Node *n, std::vector<Triangle> * result) {
+
+
 
 	if(n->box.intersect(r))
 	{
