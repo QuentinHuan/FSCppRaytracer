@@ -18,6 +18,7 @@ public:
 	Node* tree;
 	std::list<Node> NodeList;
 
+	BVH();
 	BVH(std::vector<Triangle> triangleList);
 	void build(std::vector<Node*> Nodes);
 

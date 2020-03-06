@@ -9,25 +9,21 @@
 
 Color::Color() : r(0),g(0),b(0) {}
 
-Color::Color(float r, float g, float b) : r(r), g(g), b(b) {}
+Color::Color(float r, float g, float b) : r(r), g(g), b(b) {
+	//applyBounds();
+}
 
 void Color::applyBounds() {
 	if(r > 1)
 	{
 		r = 1;
-		g = 1;
-		b = 1;
 	}
 	if(g > 1)
 	{
-		r = 1;
 		g = 1;
-		b = 1;
 	}
 	if(b > 1)
 	{
-		r = 1;
-		g = 1;
 		b = 1;
 	}
 
@@ -43,6 +39,7 @@ Color Color::operator +(Color c) {
 	result.g = this->g + c.g;
 	result.b = this->b + c.b;
 
+	//result.applyBounds();
 	return result;
 }
 
@@ -52,6 +49,7 @@ Color Color::operator -(Color c) {
 	result.g = this->g - c.g;
 	result.b = this->b - c.b;
 
+	//result.applyBounds();
 	return result;
 }
 
@@ -62,6 +60,7 @@ Color Color::operator *(Color c) {
 	result.g = this->g * c.g;
 	result.b = this->b * c.b;
 
+	//result.applyBounds();
 	return result;
 }
 
@@ -71,6 +70,7 @@ Color Color::operator *(float f) {
 	result.g = this->g * f;
 	result.b = this->b * f;
 
+	//result.applyBounds();
 	return result;
 }
 

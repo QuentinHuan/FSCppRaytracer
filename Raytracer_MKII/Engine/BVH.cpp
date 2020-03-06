@@ -7,6 +7,13 @@
 
 #include <BVH.hpp>
 
+
+BVH::BVH() {
+		std::vector<Node*> newSet;
+		NodeList = std::list<Node>();
+		tree = 0;
+}
+
 BVH::BVH(std::vector<Triangle> triangleList) : triangleList(triangleList) {
 
 	std::vector<Node*> newSet;
@@ -146,6 +153,7 @@ void BVH::testRay(Ray &r, Node *n, std::vector<Triangle> * result) {
 	}
 	return;
 }
+
 
 std::vector<Box> BVH::BVH::testRayDEBUG(Ray r, Node *n,std::vector<Box> result,int depth,int depthLim) {
 

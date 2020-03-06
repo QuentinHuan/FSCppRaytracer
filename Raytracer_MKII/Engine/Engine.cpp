@@ -15,6 +15,7 @@ Engine::Engine(int resX,int resY,Camera &cam,std::vector<Triangle> & triangleLis
 		this->resY = resY;
 		generator = std::default_random_engine();
 		distribution = std::uniform_real_distribution<float>(0,1.0);
+		intUniformDistribution = std::uniform_int_distribution<int>(0, lightTriangleList.size()-1);
 		background = Material(Color(1,1,1), true, backgroundPower);
 		cache.reserve(resX*resY);
 		buildCache(cam);
@@ -26,13 +27,14 @@ Ray Engine::shadowRay(HitInfo &hit) {
 	Timer t{};
 		if(!lightTriangleList.empty())
 		{
-			Triangle &t = lightTriangleList.at(0);
+			int rand = intUniformDistribution(generator);
+			Triangle &t = lightTriangleList.at(rand);
 
 			Vector3 origin = hit.calcIntersectionCoord() + hit.normal*selfIntersectionThreshold;
 			//Ray r = Ray(t.calcCenter() - origin,origin);//adhoc shadowRay
 			Vector3 n = (uniformRndInTriangle(t) - origin);
 			float dist = Vector3::calcNorm(n);
-			Ray r = Ray(n.normalize(),origin,(t.area()/(dist*dist)));//cosine
+			Ray r = Ray(n.normalize(),origin, (t.area()/(dist*dist)) );//cosine
 
 			return r;
 		}
@@ -41,7 +43,7 @@ Ray Engine::shadowRay(HitInfo &hit) {
 
 Color Engine::render(int pixel) {
 
-	//return directLight(pixel);
+	//return directLight(pixel)*cache.at(pixel).material.diffuse;
 	//return globalIllumination(camRay,cache);
 	return (directLight(pixel) + globalIllumination(pixel))*cache.at(pixel).material.diffuse;
 }
@@ -107,9 +109,7 @@ Color Engine::globalIllumination(int pixel) {
 		}
 		else//diffuse
 		{
-
 			return GIBounce(hit);
-
 		}
 	}
 	else
@@ -132,10 +132,7 @@ Color Engine::GIBounce(HitInfo &hit) {
 	{
 		Ray giRay;
 		giRay = GIRay(hit);
-
 		HitInfo GIHit = intersect(giRay);
-
-
 
 		//float invPDF = 1.0;
 		if(GIHit.hitSomething)
@@ -146,7 +143,6 @@ Color Engine::GIBounce(HitInfo &hit) {
 				if(bounce == 1)
 				{
 					return Color();
-
 				}
 				else
 				{
@@ -157,8 +153,6 @@ Color Engine::GIBounce(HitInfo &hit) {
 			}
 			else
 			{
-
-
 				final = final * GIHit.material.diffuse*(1.0/3.14)*invPDF;
 			}
 		}
@@ -190,15 +184,16 @@ Color Engine::GIBounce(HitInfo &hit) {
 			if(bounce==maxBounce) return Color(0,0,0);
 		}
 
-
 		hit = GIHit;
-
 	}
-
 	return final;
 }
 
 Ray Engine::GIRay(HitInfo &hit) {
+
+
+
+
 
 	return cosineWeightedInSolidAngle(3.14/2,hit.normal,hit.calcIntersectionCoord()+hit.normal*selfIntersectionThreshold);
 }

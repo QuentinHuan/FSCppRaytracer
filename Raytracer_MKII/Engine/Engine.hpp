@@ -46,6 +46,7 @@ private:
 	//random generator
 	std::default_random_engine generator;
 	std::uniform_real_distribution<float> distribution;
+	std::uniform_int_distribution<int> intUniformDistribution;
 
 	//numericalConst
 	const float selfIntersectionThreshold = 0.000001;
