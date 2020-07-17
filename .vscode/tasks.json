@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "C/C++: g++ build active file",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-g",
+                "${fileDirname}/*.cpp",
+                "${fileDirname}/Main/*.cpp",
+                "${fileDirname}/Primitives/*.cpp",
+                "${fileDirname}/Engine/*.cpp",
+                "${fileDirname}/Rendering/*.cpp",
+                "-I",
+                "${fileDirname}/Primitives",
+                "-I",
+                "${fileDirname}/Main",
+                "-I",
+                "${fileDirname}/Engine",
+                "-I",
+                "${fileDirname}/Rendering",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-Wall",
+                "-l",
+                "pthread"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

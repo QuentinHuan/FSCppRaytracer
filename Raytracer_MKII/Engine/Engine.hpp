@@ -35,13 +35,13 @@ private:
 
 	//rendering properties
 	int maxBounce;
-	bool useAccelerationStructure = 0;
+	bool useAccelerationStructure = 1;
 	bool debugBVH = 0;
 
 	int resX,resY;
 
 	Material background;
-	float backgroundPower = 0;
+	float backgroundPower = 1;
 
 	//random generator
 	std::default_random_engine generator;
@@ -57,7 +57,6 @@ private:
 	//fonctions------------------------------------------------
 	HitInfo rayCast(Ray r);
 	HitInfo intersect(Ray &r);
-
 
 	Color directLight(int pixel);
 

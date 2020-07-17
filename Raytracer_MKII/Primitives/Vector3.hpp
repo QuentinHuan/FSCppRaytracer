@@ -34,6 +34,7 @@ public:
 	float maxComponent();
 	float minComponent();
 
+	float getComponent(int index);
 
 	Vector3 normalize();
 };

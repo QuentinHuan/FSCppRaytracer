@@ -93,7 +93,7 @@ Color Engine::directLight(int pixel) {
 	else
 	{
 		//statCounter.addCriteriaTime(1,t.elapsed());
-		return background.diffuse*background.emissionPower;
+		return background.diffuse*backgroundPower;
 	}
 }
 
@@ -107,7 +107,7 @@ Color Engine::globalIllumination(int pixel) {
 		{
 			return Color();
 		}
-		else//diffuse
+		else//diff
 		{
 			return GIBounce(hit);
 		}
@@ -254,7 +254,16 @@ HitInfo Engine::intersect(Ray &r) {
 
 	std::vector<Triangle> Tref = std::vector<Triangle>();
 
-	Tref = bvh.testRay(r);
+	if(useAccelerationStructure)
+	{
+		Tref = bvh.testRay(r);
+	}
+	else
+	{
+		Tref = TriangleList;
+	}
+	
+
 	statCounter.addCriteriaTime(1,t.elapsed());
 
 	//fill the vector with the coord of all intersection points (in ray space)
@@ -269,8 +278,8 @@ HitInfo Engine::intersect(Ray &r) {
 	}
 
 	if(debugBVH)
-	{
-		std::vector<Box> B = bvh.testRayDEBUG(r,8);
+	{/*
+		//std::vector<Box> B = bvh.testRayDEBUG(r,8);
 		//fill the vector with the coord of all intersection points (in ray space)
 		for(auto it = B.begin(); it != B.end(); it++)
 		{
@@ -280,7 +289,7 @@ HitInfo Engine::intersect(Ray &r) {
 			{
 				allHit.push_back(h);
 			}
-		}
+		}*/
 	}
 
 	if(allHit.size() > 0)

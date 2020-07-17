@@ -12,7 +12,7 @@ Box::Box(Vector3 min, Vector3 max) {
 	this->min = min;
 	this->max = max;
 
-	center = (max-min) / 2;
+	center = (max+min) / 2;
 	bounds[0] = min;
 	bounds[1] = max;
 }
@@ -141,25 +141,26 @@ HitInfo Box::intersectDebug(Ray &r)
 }
 
 
-Box Box::boundingBox(std::vector<Box> B) {
+Box Box::boundingBox(std::vector<Box>* B) {
 
-	//max
-	Vector3 vMax = B.at(0).max;
-	Vector3 vMin = B.at(0).min;
+if(B->size()>=1)
+{
+//max
+	Vector3 vMax = B->at(0).max;
+	Vector3 vMin = B->at(0).min;
 
-	std::vector<float> X;
-	std::vector<float> Y;
-	std::vector<float> Z;
+	std::vector<float> X = std::vector<float>();
+	std::vector<float> Y = std::vector<float>();
+	std::vector<float> Z = std::vector<float>();
 
-
-	for(auto it = B.begin(); it != B.end();it++)
+	for(int i=0;i<B->size();i++)
 	{
-		X.push_back(it->max.x);X.push_back(it->min.x);
-		Y.push_back(it->max.y);Y.push_back(it->min.y);
-		Z.push_back(it->max.z);Z.push_back(it->min.z);
+		Y.push_back(B->at(i).max.y);Y.push_back(B->at(i).min.y);
+		X.push_back(B->at(i).max.x);X.push_back(B->at(i).min.x);
+		Z.push_back(B->at(i).max.z);Z.push_back(B->at(i).min.z);
 	}
 
-	for(int i = 0; i< B.size()*2;i++)
+	for(int i = 0; i< B->size()*2;i++)
 	{
 		if(vMin.x > X.at(i)) vMin.x = X.at(i);
 		if(vMin.y > Y.at(i)) vMin.y = Y.at(i);
@@ -171,5 +172,12 @@ Box Box::boundingBox(std::vector<Box> B) {
 	}
 
 	return Box(vMin,vMax);
+}
+else
+{
+	return Box();
+}
+
+	
 
 }

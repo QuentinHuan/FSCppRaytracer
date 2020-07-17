@@ -12,24 +12,30 @@
 #include "Triangle.hpp"
 #include "Box.hpp"
 
+//-----------------------------------------------
+//Node class. Parts of the binary tree BVH system
+//-----------------------------------------------
+
 class Node {
 public:
+	Node * childR;//child reference of the node
+	Node * childL;
+	int primOffset, nPrimitives;//index of the first primitive in the sorted BVH primitives array
+	
 
-	Node* parent;
-	std::vector<Node*> childs;
-
-	Triangle triangle;
 	Vector3 centroid;
 	Box box;
+	std::vector<Triangle> infoArray;
+	int splitOn =0;
 
-	Node(Node* parent, Triangle triangle);
-	Node(std::vector<Node*> childs);
-	std::string toString();
-
+	Node();
+	Node(std::vector<Triangle> infoArray);//Interior node creation
+	Node(int primOffset,int nPrimitives);//leaf creation
+	void split(Node* child1, Node* child2);//split the current node into 2 nodes along one axis (depends on splittingMethod). Initialise the childs of the node with the result
+	void computeBoundingBox();
 private:
-	std::string toString(Node * n, std::string s);
 
-
+	
 };
 
 #endif /* NODE_HPP_ */

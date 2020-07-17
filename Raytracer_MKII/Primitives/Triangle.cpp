@@ -7,15 +7,18 @@
 
 #include "Triangle.hpp"
 
-Triangle::Triangle() : a(Vector3()), b(Vector3()), c(Vector3()),normal(Vector3()), material(Material()){}
+Triangle::Triangle() : a(Vector3()), b(Vector3()), c(Vector3()),normal(Vector3()), material(Material()){
+	bBox = Box(Vector3::min(a,Vector3::min(b,c)),Vector3::max(a,Vector3::max(b,c)));
+}
 
 Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Material material) :  a(a), b(b), c(c), material(material){
 	this->normal = calcNormal();
+	bBox = Box(Vector3::min(a,Vector3::min(b,c)),Vector3::max(a,Vector3::max(b,c)));
 }
 
 
 Triangle::Triangle(Vector3 a, Vector3 b, Vector3 c, Vector3 normal, Material material) : a(a), b(b), c(c), normal(normal), material(material){
-	//this->normal = calcNormal();
+	bBox = Box(Vector3::min(a,Vector3::min(b,c)),Vector3::max(a,Vector3::max(b,c)));
 }
 
 //___________________

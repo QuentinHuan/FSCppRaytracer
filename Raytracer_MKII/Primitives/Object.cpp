@@ -67,7 +67,8 @@ Object Object::load(std::string filename) {
 
 	int matCounter = 0;
     Material mat;
-
+	if(file.is_open())
+	{
 	while (std::getline(file, line))
 	{
 		 //create vertex collection
@@ -154,6 +155,7 @@ Object Object::load(std::string filename) {
 	    	 objectTriArray.push_back(tri);
 
 	     }
+	}
 	}
     return Object{objectTriArray};
 }

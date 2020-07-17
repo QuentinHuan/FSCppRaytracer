@@ -79,3 +79,24 @@ Vector3 Vector3::min(Vector3 a, Vector3 b) {
 Vector3 Vector3::max(Vector3 a, Vector3 b) {
 	return Vector3(fmax(a.x,b.x),fmax(a.y,b.y),fmax(a.z,b.z));
 }
+
+float Vector3::getComponent(int index){
+	switch (index)
+	{
+	case 1:
+		return x;
+		break;
+
+	case 2:
+		return y;
+		break;
+
+	case 3:
+		return z;
+		break;
+	
+	default:
+	return 0;
+		break;
+	}
+}

@@ -22,7 +22,7 @@ public:
 
 	Vector3 bounds[2];
 
-	static Box boundingBox(std::vector<Box> B);
+	static Box boundingBox(std::vector<Box>* B);
 };
 
 #endif /* BOX_HPP_ */
