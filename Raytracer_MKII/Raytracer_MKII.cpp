@@ -25,11 +25,14 @@
 using namespace std;
 
 int resX = 512, resY=resX;
-int spp = 10;
+int spp = 100;
 int maxBounce = 4;
 int maxBSPDepth = 2;
 
 bool bMultiCore = 1;
+
+int progress [4] = {0,0,0,0};
+const int progressEnd [4] = {spp,spp,spp,spp};
 
 std::vector<Object> objList;
 std::vector<Triangle> lights;
@@ -38,8 +41,6 @@ BVH bvh;
 
 void singleCore(Engine &e,Image &output)
 {
-
-
 	//Engine declaration
 	Image oneSampleImg(resX,resY);
 	Image imgFinal(resX,resY);
@@ -135,8 +136,6 @@ void fragment(int id, Engine &e,Image &output)
 				oneSampleImg.array.at(i*dim + j) = e.render(((i+offsetX)*resX)+ j + offsetY);
 			}
 		}
-		//oneSampleImg.exportPPM("onespp.ppm",8);
-
 		for(int i=0;i<dim;i++)
 		{
 			for(int j=0;j<dim;j++)
@@ -144,18 +143,58 @@ void fragment(int id, Engine &e,Image &output)
 				output.array.at(((i+offsetX)*resX)+ j + offsetY) = ((output.array.at(((i+offsetX)*resX)+ j + offsetY)*(n-1.f)) + oneSampleImg.array.at(i*dim+j))*(float)(1.0/(n));
 			}
 		}
-
-
-		//imgFinal.exportPPM("img.ppm",8);
-		if(id == 1)
-		{
-			cout  << "Thread " << id << "--> "<< n << "/" << spp <<"spp" << std::endl;
-		}
-
+		progress[id] = n;
 	}
-	//PLACE HOLDER
-	//--------------------------------------------
-	//return oneSampleImg;
+	return;
+}
+
+void display()
+{
+	Timer t{};
+	bool quit = false;
+
+	
+	while(!quit)
+	{
+		if (t.elapsed() >= 0.1)
+		{
+				for (int k = 0; k < 3; k++)
+				{
+					printf("\n\n\n\n\n");
+				}
+				for (int i = 0; i < 4; i++)
+				{
+					printf("Thread %d --> [",i);
+					for (int k = 0; k < (10*progress[i])/((float)spp); k++)
+					{
+						printf("|");
+					}
+					for (int k = (10*progress[i])/((float)spp); k < 10; k++)
+					{
+						printf(" ");
+					}
+					printf("]\n");
+					//printf("Thread %d --> %d / %d \n",i,progress[i],spp);
+				}
+			
+			int s=0;
+			for (int k = 0; k < 4; k++)
+			{
+				if (progress[k]==spp)
+				{
+					s = s+1;
+				}
+			}
+			if (s==4)
+			{
+				quit=true;
+			}
+			
+			
+			fflush(stdout);
+			t.reset();
+		}
+	}
 	return;
 }
 
@@ -164,7 +203,7 @@ int main() {
 	//scene Data
 	Timer t{};
 
-	objList.push_back(Object("/home/huan/git/FSCppRaytracer/Raytracer_MKII/dragon.obj"));
+	objList.push_back(Object("/home/huan/git/FSCppRaytracer/Raytracer_MKII/Cornell box.obj"));
 	printf("object Import Done\n");
 	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
@@ -190,37 +229,34 @@ int main() {
 	printf("start computing\n");
 	if(bMultiCore)
 	{
-		//std::future<Image> T0 = std::async(fragment,0);
-		//std::future<Image> T1 = std::async(fragment,1);
-		//std::future<Image> T2 = std::async(fragment,2);
-		//std::future<Image> T3 = std::async(fragment,3);
-
-
-
 		std::thread T0(fragment,0,std::ref(engine),std::ref(imgFinal));
 		std::thread T1(fragment,1,std::ref(engine),std::ref(imgFinal));
 		std::thread T2(fragment,2,std::ref(engine),std::ref(imgFinal));
 		std::thread T3(fragment,3,std::ref(engine),std::ref(imgFinal));
-		//Image I1 = T1.get();
-		//Image I2 = T2.get();
-		//Image I3 = T3.get();
-		//fragment(0);
+
+		std::thread T4(display);
+
 		T0.join();
 		T1.join();
 		T2.join();
 		T3.join();
+		T4.join();
 	}
 	else
 	{
 		singleCore(std::ref(engine),std::ref(imgFinal));
 	}
 
-	statCounter.runtime = t.elapsed();
-	cout << statCounter.toString(true) << endl;
-	//cout << "debug = " << statCounter.criteria.at(1) << endl;
+	//statCounter.runtime = t.elapsed();
+	
+	printf("----------------------\n");
+	printf("DONE\n");
+	printf("----------------------\n\n\n");
+	printf("runtime : %f\n", t.elapsed());
+	printf("\n\n");
 
 	imgFinal.exportPPM("img.ppm",8);
-	printf("DONE");
+
 	return 0;
 }
 
