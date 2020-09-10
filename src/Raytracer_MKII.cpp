@@ -205,9 +205,15 @@ int render()
 //--------------------------------------------
 //				OpenGl Viewer
 //--------------------------------------------
+void GLViewport()
+{
+	GLContext viewport = GLContext();
+	return;
+}
 
 int main()
 {
-	GLContext glViewer = GLContext();
+	std::thread T5(GLViewport);
 	render();
+	T5.join();
 }
