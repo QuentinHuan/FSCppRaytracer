@@ -24,7 +24,6 @@ Engine::Engine(int resX,int resY,Camera &cam,std::vector<Triangle> & triangleLis
 
 Ray Engine::shadowRay(HitInfo &hit) {
 
-	Timer t{};
 		if(!lightTriangleList.empty())
 		{
 			int rand = intUniformDistribution(generator);
@@ -34,7 +33,7 @@ Ray Engine::shadowRay(HitInfo &hit) {
 			//Ray r = Ray(t.calcCenter() - origin,origin);//adhoc shadowRay
 			Vector3 n = (uniformRndInTriangle(t) - origin);
 			float dist = Vector3::calcNorm(n);
-			Ray r = Ray(n.normalize(),origin, (t.area()/(dist*dist)) );//cosine
+			Ray r = Ray(n.normalize(),origin, (t.area()/(dist*dist*lightTriangleList.size())) );//cosine
 
 			return r;
 		}
@@ -125,7 +124,8 @@ Color Engine::GIBounce(HitInfo &hit) {
 	Color light = Color(), final = Color(1,1,1);
 	bool hitLightSource = false;
 
-	float invPDF = (3.14);//cosine
+	Ray lightRay = shadowRay(hit);
+	float invPDF = 1/hit.material.brdf(hit.normal,hit.r.dir,lightRay.dir);//cosine
 
 	for(int bounce = 1; bounce <= maxBounce;bounce++)
 	{
