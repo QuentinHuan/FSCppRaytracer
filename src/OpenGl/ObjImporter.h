@@ -19,6 +19,7 @@ public:
     float *vertex;
     float *normal;
     int *indices;
+    float *textCoord;
 
     unsigned int vertexSize;
     unsigned int normalSize;
@@ -26,6 +27,7 @@ public:
 
     std::vector<float> fileVertexArray; //vertex collection described in the file
     std::vector<float> fileNormalArray; //normal vector collection described in the file
+    std::vector<float> fileTextArray;   //normal vector collection described in the file
     std::vector<int> elementArray;      //collection of the triangles composing the object
 
     ObjImporter()
@@ -67,6 +69,14 @@ public:
                         //vertex texture
                         if (line.at(1) == 't')
                         {
+                            std::vector<std::string> elements;
+                            split(line, elements, ' ');
+                            std::vector<float> coord;
+                            for (int i = 1; i < 4; i++)
+                            {
+                                std::vector<float> fileTextArray; //normal vector collection described in the file
+                                .push_back(std::stof(elements.at(i)));
+                            }
                         }
                         //vertex normal
                         if (line.at(1) == 'n')
@@ -123,6 +133,7 @@ public:
 
         vertex = &fileVertexArray.at(0);
         normal = &fileNormalArray.at(0);
+        textCoord = &fileTextArray.at(0);
         indices = &elementArray.at(0);
 
         vertexSize = sizeof(float) * fileVertexArray.size();
