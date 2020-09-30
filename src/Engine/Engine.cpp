@@ -61,9 +61,7 @@ Color Engine::directLight(int pixel)
 		{
 
 			Ray shadRay = shadowRay(hit);
-
 			HitInfo shadHit = intersect(shadRay);
-
 			if (shadHit.hitSomething)
 			{
 				if (shadHit.material.emission)
@@ -134,16 +132,15 @@ Color Engine::GIBounce(HitInfo &hit)
 		giRay = GIRay(hit);
 		HitInfo GIHit = intersect(giRay);
 
-		//float invPDF = 1.0;
 		if (GIHit.hitSomething)
 		{
 			if (GIHit.material.emission) //light
 			{
-				if (bounce == 1)
+				if (bounce == 1) //direct lighting, reject
 				{
 					return Color();
 				}
-				else
+				else //indirect lighting
 				{
 					final = final * GIHit.material.diffuse * GIHit.material.emissionPower * (1.0 / 3.14) * invPDF;
 					hitLightSource = true;
@@ -183,6 +180,7 @@ Color Engine::GIBounce(HitInfo &hit)
 			if (bounce == maxBounce)
 				return Color(0, 0, 0);
 		}
+
 		hit = GIHit;
 	}
 	return final;
@@ -213,6 +211,11 @@ Ray Engine::cosineWeightedInSolidAngle(float angle, Vector3 direction, Vector3 p
 
 		return Ray(w, position, angle);
 	}
+}
+
+Ray Engine::uniformInHemisphere(Vector3 direction, Vector3 position)
+{
+	Vector3 v = Vector3(distribution(generator), distribution(generator), distribution(generator));
 }
 
 HitInfo Engine::intersect(Ray &r)

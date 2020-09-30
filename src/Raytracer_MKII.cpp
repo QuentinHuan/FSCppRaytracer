@@ -26,7 +26,7 @@ using namespace std;
 
 int resX = 512, resY = resX;
 int spp = 100;
-int maxBounce = 4;
+int maxBounce = 2;
 int maxBSPDepth = 2;
 
 bool bMultiCore = 1;
