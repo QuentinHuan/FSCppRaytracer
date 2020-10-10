@@ -8,20 +8,21 @@
 #ifndef COLOR_HPP_
 #define COLOR_HPP_
 
-class Color {
+class Color
+{
 private:
-
 public:
-	float r,g,b;
+	float r, g, b;
 	Color();
 	Color(float r, float g, float b);
 
 	void applyBounds();
-	Color operator +(Color c);
-	Color operator -(Color c);
-	Color operator *(Color c);
-	Color operator *(float f);
-	bool operator ==(Color c);
+	Color operator+(Color c);
+	Color operator-(Color c);
+	Color operator*(Color c);
+	Color operator*(float f);
+	Color operator/(Color c);
+	bool operator==(Color c);
 };
 
 #endif /* COLOR_HPP_ */

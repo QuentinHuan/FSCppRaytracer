@@ -24,9 +24,9 @@
 #include "BVH.hpp"
 using namespace std;
 
-int resX = 512, resY = resX;
-int spp = 100;
-int maxBounce = 2;
+int resX = 1024, resY = resX;
+int spp = 200;
+int maxBounce = 4;
 int maxBSPDepth = 2;
 
 bool bMultiCore = 1;
@@ -36,7 +36,7 @@ const int progressEnd[4] = {spp, spp, spp, spp};
 
 std::vector<Object> objList;
 std::vector<Triangle> lights;
-Camera cam(Vector3(0, -3.5, 0), resX, resY, 3.14 / 4.0, 1);
+Camera cam(Vector3(0, -2.0, 0), resX, resY, 3.14 / 4.0, 1);
 BVH bvh;
 
 std::string pathToFiles = "/home/huan/git/FSCppRaytracer/objectFiles/";
@@ -207,7 +207,7 @@ int main()
 	printf("object Import Done\n");
 	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
-	//objList.push_back(Object("FurnaceHD.obj"));
+	objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
 
 	for (auto it = objList.at(0).faces.begin(); it != objList.at(0).faces.end(); it++)

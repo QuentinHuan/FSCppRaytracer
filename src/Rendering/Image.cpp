@@ -47,7 +47,8 @@ void Image::exportPPM(std::string file, int bitColorDepth)
 		colorInt c;
 		Color cf = array.at(i);
 
-		cf.applyBounds();
+		//cf.applyBounds();
+		cf = cf / (cf + Color(1, 1, 1));
 		//gamma correction
 		cf.r = powf(cf.r, 1.0 / 2.2);
 		cf.g = powf(cf.g, 1.0 / 2.2);

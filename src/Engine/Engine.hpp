@@ -40,6 +40,7 @@ private:
 	Material background;
 	float backgroundPower = 0.0;
 
+	const float invPI = (1.0 / 3.14);
 	//random generator
 	std::default_random_engine generator;
 	std::uniform_real_distribution<float> distribution;

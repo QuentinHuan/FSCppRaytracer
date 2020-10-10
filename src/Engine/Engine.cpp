@@ -33,7 +33,7 @@ Ray Engine::shadowRay(HitInfo &hit)
 		//Ray r = Ray(t.calcCenter() - origin,origin);//adhoc shadowRay
 		Vector3 n = (uniformRndInTriangle(t) - origin);
 		float dist = Vector3::calcNorm(n);
-		Ray r = Ray(n.normalize(), origin, (t.area() / (dist * dist))); //cosine
+		Ray r = Ray(n.normalize(), origin, (lightTriangleList.size()) * (std::max(Vector3::dot(t.normal.normalize(), n.normalize() * (-1)), 0.0f)) * (t.area() / (dist * dist))); //cosine
 
 		return r;
 	}
@@ -45,7 +45,7 @@ Color Engine::render(int pixel)
 {
 	//return directLight(pixel);
 	//return globalIllumination(pixel);
-	return (directLight(pixel) + globalIllumination(pixel)) * cache.at(pixel).material.diffuse;
+	return directLight(pixel) + globalIllumination(pixel) * cache.at(pixel).material.diffuse;
 }
 
 Color Engine::directLight(int pixel)
@@ -67,8 +67,11 @@ Color Engine::directLight(int pixel)
 				if (shadHit.material.emission)
 				{
 					light = shadHit.material.diffuse * shadHit.material.emissionPower;
-					//return hit.material.diffuse*Vector3::dot(hit.normal,shadRay.dir)*(1/3.14)*light;//adhoc
-					return light * (1 / 3.14) * std::abs(Vector3::dot(hit.normal, shadRay.dir)) * shadRay.distributionSolidAngle;
+					float nDotWi = std::abs(Vector3::dot(hit.normal, shadRay.dir));
+					Color BRDF = hit.material.BRDF(hit.r.dir * -1, shadRay.dir, hit.normal);
+
+					return light * shadRay.invPDF * BRDF * nDotWi; //direct light, no BRDF sampling
+																   //return Color(1, 1, 1) * BRDF;
 				}
 				else
 				{
@@ -124,50 +127,70 @@ Color Engine::GIBounce(HitInfo &hit)
 	Color light = Color(), final = Color(1, 1, 1);
 	bool hitLightSource = false;
 
-	float invPDF = (3.14); //cosine
-
+	Ray giRay2;
+	Ray giRay;
+	HitInfo GIHit;
+	HitInfo GIHit2;
 	for (int bounce = 1; bounce <= maxBounce; bounce++)
 	{
-		Ray giRay;
-		giRay = GIRay(hit);
-		HitInfo GIHit = intersect(giRay);
+		if (bounce == 1)
+		{
+			giRay = hit.material.sampleBRDF(hit.normal, hit.r.dir, hit.calcIntersectionCoord() + hit.normal * selfIntersectionThreshold, generator, distribution);
+			GIHit = intersect(giRay);
+		}
 
 		if (GIHit.hitSomething)
 		{
+			giRay2 = GIHit.material.sampleBRDF(GIHit.normal, GIHit.r.dir, GIHit.calcIntersectionCoord() + GIHit.normal * selfIntersectionThreshold, generator, distribution);
+			//next Ray
+			GIHit2 = intersect(giRay2);
+			float nDotWi = std::max(Vector3::dot(GIHit.normal, GIHit2.r.dir), 0.0f);
 			if (GIHit.material.emission) //light
 			{
-				if (bounce == 1) //direct lighting, reject
+				if (bounce != 1)
 				{
-					return Color();
+					Color BRDF = GIHit.material.diffuse * GIHit.material.emissionPower;
+					final = final * BRDF;
+					hitLightSource = true;
 				}
-				else //indirect lighting
+				break;
+			}
+			else //other material
+			{
+				Color BRDF = GIHit.material.BRDF(GIHit.r.dir, GIHit2.r.dir, GIHit.normal);
+				final = final * BRDF * GIHit2.r.invPDF * nDotWi;
+				if (bounce == maxBounce)
 				{
-					final = final * GIHit.material.diffuse * GIHit.material.emissionPower * (1.0 / 3.14) * invPDF;
+					final = final * background.diffuse * background.emissionPower;
 					hitLightSource = true;
 					break;
 				}
 			}
-			else //other material
-			{
-				final = final * GIHit.material.diffuse * (1.0 / 3.14) * invPDF;
-			}
 		}
 		else //background
 		{
-			final = final * background.diffuse * background.emissionPower * (1.0 / 3.14) * invPDF;
+			final = final * background.diffuse * background.emissionPower;
 			hitLightSource = true;
 			break;
 		}
 
-		Ray shadRay = shadowRay(GIHit);
-		HitInfo shadHit = intersect(shadRay);
-		if (shadHit.hitSomething)
+		if (!hitLightSource)
 		{
-			if (shadHit.material.emission)
+			Ray shadRay = shadowRay(GIHit);
+			HitInfo shadHit = intersect(shadRay);
+			if (shadHit.hitSomething)
 			{
-				final = final * shadHit.material.diffuse * shadHit.material.emissionPower * std::abs(Vector3::dot(shadHit.normal, shadRay.dir)) * (shadRay.distributionSolidAngle) * (1 / 3.14) * invPDF;
-				hitLightSource = true;
-				break;
+				if (shadHit.material.emission)
+				{
+					final = final * shadHit.material.diffuse * shadHit.material.emissionPower * (shadRay.invPDF);
+					hitLightSource = true;
+					break;
+				}
+				else
+				{
+					if (bounce == maxBounce)
+						return Color(0, 0, 0);
+				}
 			}
 			else
 			{
@@ -175,20 +198,12 @@ Color Engine::GIBounce(HitInfo &hit)
 					return Color(0, 0, 0);
 			}
 		}
-		else
-		{
-			if (bounce == maxBounce)
-				return Color(0, 0, 0);
-		}
 
 		hit = GIHit;
+		GIHit = GIHit2;
+		giRay = giRay2;
 	}
 	return final;
-}
-
-Ray Engine::GIRay(HitInfo &hit)
-{
-	return cosineWeightedInSolidAngle(3.14 / 2, hit.normal, hit.calcIntersectionCoord() + hit.normal * selfIntersectionThreshold);
 }
 
 //doesn't works, rotation of the generated vector is incorrect
