@@ -7,27 +7,28 @@
 
 #include <BVH.hpp>
 
-
-BVH::BVH() {
+BVH::BVH()
+{
 	NodeList = std::list<Node>();
-	tree = 0;	
+	tree = 0;
 }
 
-BVH::BVH(std::vector<Triangle> * triangleList) : triangleList(triangleList) {
+BVH::BVH(std::vector<Triangle> *triangleList) : triangleList(triangleList)
+{
 	NodeList = std::list<Node>();
 	NodeList.push_back(Node());
 	for (int i = 0; i < triangleList->size(); i++)
 	{
 		NodeList.front().infoArray.push_back(triangleList->at(i));
 	}
-	
+
 	NodeList.front().computeBoundingBox();
 	build(&NodeList.front());
 }
 
-
-void BVH::build(Node * node) {
-	if(node->infoArray.size()>2)//interior node
+void BVH::build(Node *node)
+{
+	if (node->infoArray.size() > 2) //interior node
 	{
 		NodeList.push_back(Node());
 		NodeList.push_back(Node());
@@ -35,32 +36,33 @@ void BVH::build(Node * node) {
 		Node *ref1 = &*iter;
 		++iter;
 		Node *ref2 = &*iter;
-		
-		node->split(ref2,ref1);//split into two child nodes previously created
+
+		node->split(ref2, ref1); //split into two child nodes previously created
 
 		build(node->childR);
 		build(node->childL);
 	}
-	else//leaf, end
+	else //leaf, end
 	{
 		node->computeBoundingBox();
 		return;
 	}
 }
 
-std::vector<Triangle> BVH::testRay(Ray &r) {
+std::vector<Triangle> BVH::testRay(Ray &r)
+{
 	std::vector<Triangle> tri = std::vector<Triangle>();
-	testRay(r,&NodeList.front(),&tri);
+	testRay(r, &NodeList.front(), &tri);
 	return tri;
 }
 
 int BVH::triangleAmount(Node *n)
 {
-	if(n == NULL)
+	if (n == NULL)
 	{
 		return 0;
 	}
-	if(n->childL == NULL && n->childR==NULL)
+	if (n->childL == NULL && n->childR == NULL)
 	{
 		return n->infoArray.size();
 	}
@@ -68,7 +70,6 @@ int BVH::triangleAmount(Node *n)
 	{
 		return triangleAmount(n->childL) + triangleAmount(n->childR);
 	}
-	
 }
 
 /*
@@ -78,14 +79,14 @@ std::vector<Box> BVH::testRayDEBUG(Ray r,int depthLim) {
 	return testRayDEBUG(r,tree,result,0,depthLim);
 }*/
 
-
-void BVH::testRay(Ray &r, Node *n, std::vector<Triangle> * result) {
-	if(n->box.intersect(r))
+void BVH::testRay(Ray &r, Node *n, std::vector<Triangle> *result)
+{
+	if (n->box.intersect(r))
 	{
-		if(!n->infoArray.empty() == 0)//interior node
+		if (!n->infoArray.empty() == 0) //interior node
 		{
-			testRay(r,n->childR,result);
-			testRay(r,n->childL,result);
+			testRay(r, n->childR, result);
+			testRay(r, n->childL, result);
 		}
 		else
 		{

@@ -8,7 +8,6 @@
 #ifndef OBJECT_HPP_
 #define OBJECT_HPP_
 
-
 #include <vector>
 #include <string>
 #include <fstream>
@@ -17,17 +16,17 @@
 #include "Utility.hpp"
 #include "Triangle.hpp"
 
-class Object {
+class Object
+{
 public:
 	std::vector<Triangle> faces;
+	std::vector<Material> mat;
 
 	Object();
 	Object(std::vector<Triangle> triArray);
 	Object(std::string file);
 
-	static Object load(std::string filename);
-	Vector3 getCenter();
-	float getScale();
+	Object load(std::string filename);
 };
 
 #endif /* OBJECT_HPP_ */

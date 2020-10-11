@@ -14,7 +14,6 @@
 #include <random>
 #include <cmath>
 
-#include "Statistics.hpp"
 #include "Timer.hpp"
 #include "Utility.hpp"
 #include "BVH.hpp"
@@ -25,14 +24,13 @@ class Engine
 {
 private:
 	//internal data structure
-	std::vector<Triangle> &TriangleList;
+	Object obj;
+	std::vector<Triangle> TriangleList;
 	std::vector<Triangle> &lightTriangleList;
 	BVH bvh;
-	Statistics &statCounter;
 
 	//rendering properties
 	int maxBounce;
-	bool useAccelerationStructure = 1;
 	bool debugBVH = 0;
 
 	int resX, resY;
@@ -69,7 +67,7 @@ private:
 
 public:
 	//fonctions------------------------------------------------
-	Engine(int resX, int resY, Camera &cam, std::vector<Triangle> &triangleList, std::vector<Triangle> &lightTriangleList, Statistics &statCounter, int maxBounce, BVH bvh);
+	Engine(int resX, int resY, Camera &cam, Object obj, std::vector<Triangle> &lightTriangleList, int maxBounce, BVH bvh);
 	Color render(int pixel);
 	void buildCache(Camera &cam);
 };

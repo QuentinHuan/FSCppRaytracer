@@ -19,7 +19,7 @@ public:
 	Color diffuse;
 	bool emission;
 	float emissionPower;
-	float alpha;
+	float alpha, alphaSqr;
 
 	Material();
 	Material(Color diffuse, float alpha);

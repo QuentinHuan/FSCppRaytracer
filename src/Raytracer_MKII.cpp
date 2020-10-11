@@ -20,12 +20,11 @@
 #include <future>
 
 #include "Engine.hpp"
-#include "Statistics.hpp"
 #include "BVH.hpp"
 using namespace std;
 
-int resX = 1024, resY = resX;
-int spp = 200;
+int resX = 512, resY = resX;
+int spp = 100;
 int maxBounce = 4;
 int maxBSPDepth = 2;
 
@@ -46,7 +45,6 @@ void singleCore(Engine &e, Image &output)
 	//Engine declaration
 	Image oneSampleImg(resX, resY);
 	Image imgFinal(resX, resY);
-	Statistics statCounter{};
 
 	//--------------------------------------------
 	//Main Loop
@@ -207,12 +205,12 @@ int main()
 	printf("object Import Done\n");
 	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
-	objList.push_back(Object("FurnaceHD.obj"));
+	//objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
 
 	for (auto it = objList.at(0).faces.begin(); it != objList.at(0).faces.end(); it++)
 	{
-		if (it->material.emission)
+		if (objList.at(0).mat.at(it->material).emission)
 		{
 			lights.push_back(*it);
 		}
@@ -221,8 +219,7 @@ int main()
 	bvh = BVH(&objList.at(0).faces);
 	printf("BVH Done\n");
 	printf("tri count : %d / %d\n", bvh.triangleAmount(&bvh.NodeList.front()), objList.at(0).faces.size());
-	Statistics statCounter{};
-	Engine engine(resX, resY, cam, objList.at(0).faces, lights, statCounter, maxBounce, bvh);
+	Engine engine(resX, resY, cam, objList.at(0), lights, maxBounce, bvh);
 
 	Image imgFinal(resX, resY);
 	printf("Engine init done\n");
@@ -246,8 +243,6 @@ int main()
 	{
 		singleCore(std::ref(engine), std::ref(imgFinal));
 	}
-
-	//statCounter.runtime = t.elapsed();
 
 	printf("----------------------\n");
 	printf("DONE\n");

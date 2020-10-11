@@ -16,26 +16,25 @@
 //Node class. Parts of the binary tree BVH system
 //-----------------------------------------------
 
-class Node {
+class Node
+{
 public:
-	Node * childR;//child reference of the node
-	Node * childL;
-	int primOffset, nPrimitives;//index of the first primitive in the sorted BVH primitives array
-	
+	Node *childR; //child reference of the node
+	Node *childL;
+	int primOffset, nPrimitives; //index of the first primitive in the sorted BVH primitives array
 
 	Vector3 centroid;
 	Box box;
 	std::vector<Triangle> infoArray;
-	int splitOn =0;
+	int splitOn = 0;
 
 	Node();
-	Node(std::vector<Triangle> infoArray);//Interior node creation
-	Node(int primOffset,int nPrimitives);//leaf creation
-	void split(Node* child1, Node* child2);//split the current node into 2 nodes along one axis (depends on splittingMethod). Initialise the childs of the node with the result
+	Node(std::vector<Triangle> infoArray);	//Interior node creation
+	Node(int primOffset, int nPrimitives);	//leaf creation
+	void split(Node *child1, Node *child2); //split the current node into 2 nodes along one axis (depends on splittingMethod). Initialise the childs of the node with the result
 	void computeBoundingBox();
-private:
 
-	
+private:
 };
 
 #endif /* NODE_HPP_ */

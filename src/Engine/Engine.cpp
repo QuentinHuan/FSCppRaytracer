@@ -7,9 +7,10 @@
 
 #include "Engine.hpp"
 
-Engine::Engine(int resX, int resY, Camera &cam, std::vector<Triangle> &triangleList, std::vector<Triangle> &lightTriangleList, Statistics &statCounter, int maxBounce, BVH bvh) : TriangleList(triangleList), lightTriangleList(lightTriangleList), bvh(bvh), statCounter(statCounter), maxBounce(maxBounce)
+Engine::Engine(int resX, int resY, Camera &cam, Object obj, std::vector<Triangle> &lightTriangleList, int maxBounce, BVH bvh) : lightTriangleList(lightTriangleList), bvh(bvh), maxBounce(maxBounce)
 {
-
+	this->obj = obj;
+	TriangleList = obj.faces;
 	this->resX = resX;
 	this->resY = resY;
 	generator = std::default_random_engine();
@@ -22,8 +23,6 @@ Engine::Engine(int resX, int resY, Camera &cam, std::vector<Triangle> &triangleL
 
 Ray Engine::shadowRay(HitInfo &hit)
 {
-
-	Timer t{};
 	if (!lightTriangleList.empty())
 	{
 		int rand = intUniformDistribution(generator);
@@ -45,30 +44,29 @@ Color Engine::render(int pixel)
 {
 	//return directLight(pixel);
 	//return globalIllumination(pixel);
-	return directLight(pixel) + globalIllumination(pixel) * cache.at(pixel).material.diffuse;
+	return directLight(pixel) + globalIllumination(pixel) * obj.mat.at(cache.at(pixel).material).diffuse;
 }
 
 Color Engine::directLight(int pixel)
 {
-
 	HitInfo hit = cache.at(pixel);
 	Color light, final;
 
 	if (hit.hitSomething)
 	{
 		//diffuse
-		if (hit.material.emission == false)
+		if (obj.mat.at(hit.material).emission == false)
 		{
 
 			Ray shadRay = shadowRay(hit);
 			HitInfo shadHit = intersect(shadRay);
 			if (shadHit.hitSomething)
 			{
-				if (shadHit.material.emission)
+				if (obj.mat.at(shadHit.material).emission)
 				{
-					light = shadHit.material.diffuse * shadHit.material.emissionPower;
+					light = obj.mat.at(shadHit.material).diffuse * obj.mat.at(shadHit.material).emissionPower;
 					float nDotWi = std::abs(Vector3::dot(hit.normal, shadRay.dir));
-					Color BRDF = hit.material.BRDF(hit.r.dir * -1, shadRay.dir, hit.normal);
+					Color BRDF = obj.mat.at(hit.material).BRDF(hit.r.dir * -1, shadRay.dir, hit.normal);
 
 					return light * shadRay.invPDF * BRDF * nDotWi; //direct light, no BRDF sampling
 																   //return Color(1, 1, 1) * BRDF;
@@ -88,7 +86,7 @@ Color Engine::directLight(int pixel)
 		else
 		{
 			//statCounter.addCriteriaTime(1,t.elapsed());
-			return hit.material.diffuse * hit.material.emissionPower;
+			return obj.mat.at(hit.material).diffuse * obj.mat.at(hit.material).emissionPower;
 		}
 	}
 	//background
@@ -105,20 +103,15 @@ Color Engine::globalIllumination(int pixel)
 
 	if (hit.hitSomething)
 	{
-		if (hit.material.emission)
-		{
+		if (obj.mat.at(hit.material).emission)
 			return Color();
-		}
 		else //diff
-		{
 			return GIBounce(hit);
-		}
 	}
 	else
 	{
 		return Color();
 	}
-
 	return Color();
 }
 
@@ -135,21 +128,21 @@ Color Engine::GIBounce(HitInfo &hit)
 	{
 		if (bounce == 1)
 		{
-			giRay = hit.material.sampleBRDF(hit.normal, hit.r.dir, hit.calcIntersectionCoord() + hit.normal * selfIntersectionThreshold, generator, distribution);
+			giRay = obj.mat.at(hit.material).sampleBRDF(hit.normal, hit.r.dir, hit.calcIntersectionCoord() + hit.normal * selfIntersectionThreshold, generator, distribution);
 			GIHit = intersect(giRay);
 		}
 
 		if (GIHit.hitSomething)
 		{
-			giRay2 = GIHit.material.sampleBRDF(GIHit.normal, GIHit.r.dir, GIHit.calcIntersectionCoord() + GIHit.normal * selfIntersectionThreshold, generator, distribution);
+			giRay2 = obj.mat.at(GIHit.material).sampleBRDF(GIHit.normal, GIHit.r.dir, GIHit.calcIntersectionCoord() + GIHit.normal * selfIntersectionThreshold, generator, distribution);
 			//next Ray
 			GIHit2 = intersect(giRay2);
 			float nDotWi = std::max(Vector3::dot(GIHit.normal, GIHit2.r.dir), 0.0f);
-			if (GIHit.material.emission) //light
+			if (obj.mat.at(GIHit.material).emission) //light
 			{
 				if (bounce != 1)
 				{
-					Color BRDF = GIHit.material.diffuse * GIHit.material.emissionPower;
+					Color BRDF = obj.mat.at(GIHit.material).diffuse * obj.mat.at(GIHit.material).emissionPower;
 					final = final * BRDF;
 					hitLightSource = true;
 				}
@@ -157,7 +150,7 @@ Color Engine::GIBounce(HitInfo &hit)
 			}
 			else //other material
 			{
-				Color BRDF = GIHit.material.BRDF(GIHit.r.dir, GIHit2.r.dir, GIHit.normal);
+				Color BRDF = obj.mat.at(GIHit.material).BRDF(GIHit.r.dir, GIHit2.r.dir, GIHit.normal);
 				final = final * BRDF * GIHit2.r.invPDF * nDotWi;
 				if (bounce == maxBounce)
 				{
@@ -180,9 +173,10 @@ Color Engine::GIBounce(HitInfo &hit)
 			HitInfo shadHit = intersect(shadRay);
 			if (shadHit.hitSomething)
 			{
-				if (shadHit.material.emission)
+				if (obj.mat.at(shadHit.material).emission)
 				{
-					final = final * shadHit.material.diffuse * shadHit.material.emissionPower * (shadRay.invPDF);
+
+					final = final * obj.mat.at(shadHit.material).diffuse * obj.mat.at(shadHit.material).emissionPower * (shadRay.invPDF);
 					hitLightSource = true;
 					break;
 				}
@@ -198,39 +192,11 @@ Color Engine::GIBounce(HitInfo &hit)
 					return Color(0, 0, 0);
 			}
 		}
-
 		hit = GIHit;
 		GIHit = GIHit2;
 		giRay = giRay2;
 	}
 	return final;
-}
-
-//doesn't works, rotation of the generated vector is incorrect
-Ray Engine::cosineWeightedInSolidAngle(float angle, Vector3 direction, Vector3 position)
-{
-	float u = distribution(generator);				  //[,1]
-	float theta = distribution(generator) * 2 * 3.14; //[0,2pi]
-
-	float Phi = std::acos(1 - (u * (1 - std::cos(angle))));
-	Vector3 localV = Vector3(std::sin(Phi) * std::cos(theta), std::sin(Phi) * std::sin(theta), std::cos(Phi));
-
-	Vector3 axis = Vector3::cross(Vector3(0, 0, 1), direction).normalize();
-	if (axis == Vector3())
-		return Ray(localV * direction.z, position, angle);
-	else
-	{
-		float rotAngle = std::acos(Vector3::dot(direction.normalize(), Vector3(0, 0, 1)));
-
-		Vector3 w = Quaternion::rotate(rotAngle, axis, localV);
-
-		return Ray(w, position, angle);
-	}
-}
-
-Ray Engine::uniformInHemisphere(Vector3 direction, Vector3 position)
-{
-	Vector3 v = Vector3(distribution(generator), distribution(generator), distribution(generator));
 }
 
 HitInfo Engine::intersect(Ray &r)
@@ -241,16 +207,7 @@ HitInfo Engine::intersect(Ray &r)
 
 	std::vector<Triangle> Tref = std::vector<Triangle>();
 
-	if (useAccelerationStructure)
-	{
-		Tref = bvh.testRay(r);
-	}
-	else
-	{
-		Tref = TriangleList;
-	}
-
-	statCounter.addCriteriaTime(1, t.elapsed());
+	Tref = bvh.testRay(r);
 
 	//fill the vector with the coord of all intersection points (in ray space)
 	for (auto it = Tref.begin(); it != Tref.end(); it++)
@@ -263,56 +220,28 @@ HitInfo Engine::intersect(Ray &r)
 		}
 	}
 
-	if (debugBVH)
-	{ /*
-		//std::vector<Box> B = bvh.testRayDEBUG(r,8);
-		//fill the vector with the coord of all intersection points (in ray space)
-		for(auto it = B.begin(); it != B.end(); it++)
-		{
-			HitInfo h{};
-			h = it->intersectDebug(r);
-			if(h.hitSomething)
-			{
-				allHit.push_back(h);
-			}
-		}*/
-	}
-
 	if (allHit.size() > 0)
-	{
 		return HitInfo::sortForeground(allHit);
-	}
 	else
-	{
 		return HitInfo();
-	}
 }
 
 Vector3 Engine::uniformRndInTriangle(Triangle t)
 {
-
 	float u1 = distribution(generator);
-
 	float u2 = distribution(generator);
 
 	float sqrt = std::pow(u1, 0.5);
-
 	float x = 1 - sqrt;
-
 	float y = u2 * sqrt;
-
 	Vector3 U = t.b - t.a;
-
 	Vector3 V = t.c - t.a;
-
 	Vector3 v = t.a + (U * x + V * y);
-
 	return v;
 }
 
 void Engine::buildCache(Camera &cam)
 {
-
 	int counter = 0;
 	for (int i = 0; i < resX; i++)
 	{

@@ -9,7 +9,6 @@
 
 Object::Object()
 {
-	// TODO Auto-generated constructor stub
 }
 
 Object::Object(std::vector<Triangle> triArray)
@@ -19,56 +18,8 @@ Object::Object(std::vector<Triangle> triArray)
 
 Object::Object(std::string file)
 {
+	mat.push_back(Material(Color(1.0f, 1.0f, 1.0f), true, 0));
 	faces = load(file).faces;
-}
-
-Vector3 Object::getCenter()
-{
-	Vector3 s = Vector3(0, 0, 0);
-	for (auto t : faces)
-	{
-		s = s + t.calcCenter();
-	}
-	s = s / faces.size();
-	return s;
-}
-
-float Object::getScale()
-{
-
-	float maxX = abs(faces.at(0).a.x);
-	float maxY = abs(faces.at(0).a.y);
-	float maxZ = abs(faces.at(0).a.z);
-
-	for (Triangle t : faces)
-	{
-		std::vector<float> X = std::vector<float>();
-		std::vector<float> Y = std::vector<float>();
-		std::vector<float> Z = std::vector<float>();
-
-		X.push_back(abs(t.a.x));
-		X.push_back(abs(t.b.x));
-		X.push_back(abs(t.c.x));
-		Y.push_back(abs(t.a.y));
-		Y.push_back(abs(t.b.y));
-		Y.push_back(abs(t.c.y));
-		Z.push_back(abs(t.a.z));
-		Z.push_back(abs(t.b.z));
-		Z.push_back(abs(t.c.z));
-
-		if (Utility::max(X) > maxX)
-			maxX = Utility::max(X);
-		if (Utility::max(Y) > maxY)
-			maxY = Utility::max(Y);
-		if (Utility::max(Z) > maxZ)
-			maxZ = Utility::max(Z);
-	}
-	std::vector<float> T = std::vector<float>();
-	T.push_back(maxX);
-	T.push_back(maxY);
-	T.push_back(maxZ);
-	float max = Utility::max(T);
-	return max;
 }
 
 Object Object::load(std::string filename)
@@ -81,7 +32,6 @@ Object Object::load(std::string filename)
 	std::vector<Triangle> objectTriArray; //collection of the triangles composing the object
 
 	int matCounter = 0;
-	Material mat;
 	if (file.is_open())
 	{
 		while (std::getline(file, line))
@@ -130,19 +80,19 @@ Object Object::load(std::string filename)
 				switch (matCounter)
 				{
 				case 0:
-					mat = Material(Color(1, 1, 1), 0.05);
+					mat.push_back(Material(Color(1, 1, 1), 0.05));
 					break;
 				case 1:
-					mat = Material(Color(1, 0, 0), 1);
+					mat.push_back(Material(Color(1, 0, 0), 1));
 					break;
 				case 2:
-					mat = Material(Color(0, 1, 0), 1);
+					mat.push_back(Material(Color(0, 1, 0), 1));
 					break;
 				case 3:
-					mat = Material(Color(1.0f, 1.0f, 1.0f), true, 10);
+					mat.push_back(Material(Color(1.0f, 1.0f, 1.0f), true, 10));
 					break;
 				case 4:
-					mat = Material(Color(1, 1, 1), 1);
+					mat.push_back(Material(Color(1, 1, 1), 1));
 					break;
 				}
 				matCounter++;
@@ -170,7 +120,7 @@ Object Object::load(std::string filename)
 				}
 
 				//tri made of the indices
-				Triangle tri = Triangle(fileVertexArray.at(index.at(0)), fileVertexArray.at(index.at(1)), fileVertexArray.at(index.at(2)), fileNormalArray.at(normalIndex), mat);
+				Triangle tri = Triangle(fileVertexArray.at(index.at(0)), fileVertexArray.at(index.at(1)), fileVertexArray.at(index.at(2)), fileNormalArray.at(normalIndex), matCounter);
 				objectTriArray.push_back(tri);
 			}
 		}
