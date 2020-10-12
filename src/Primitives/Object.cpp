@@ -18,8 +18,13 @@ Object::Object(std::vector<Triangle> triArray)
 
 Object::Object(std::string file)
 {
-	mat.push_back(Material(Color(1.0f, 1.0f, 1.0f), true, 0));
+	mat.push_back(std::make_shared<Mat_Emissive>(Color(1, 1, 1), 0));
 	faces = load(file).faces;
+}
+
+std::shared_ptr<Material> Object::getMat(int index)
+{
+	return mat.at(index);
 }
 
 Object Object::load(std::string filename)
@@ -80,19 +85,19 @@ Object Object::load(std::string filename)
 				switch (matCounter)
 				{
 				case 0:
-					mat.push_back(Material(Color(1, 1, 1), 0.05));
+					mat.push_back(std::make_shared<Mat_GGX>(Color(1, 1, 1), 0.05f));
 					break;
 				case 1:
-					mat.push_back(Material(Color(1, 0, 0), 1));
+					mat.push_back(std::make_shared<Mat_Lambert>(Color(1, 0, 0)));
 					break;
 				case 2:
-					mat.push_back(Material(Color(0, 1, 0), 1));
+					mat.push_back(std::make_shared<Mat_Lambert>(Color(0, 1, 0)));
 					break;
 				case 3:
-					mat.push_back(Material(Color(1.0f, 1.0f, 1.0f), true, 10));
+					mat.push_back(std::make_shared<Mat_Emissive>(Color(1, 1, 1), 10));
 					break;
 				case 4:
-					mat.push_back(Material(Color(1, 1, 1), 1));
+					mat.push_back(std::make_shared<Mat_Lambert>(Color(1, 1, 1)));
 					break;
 				}
 				matCounter++;

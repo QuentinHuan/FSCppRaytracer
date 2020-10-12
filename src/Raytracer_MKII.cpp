@@ -33,7 +33,7 @@ bool bMultiCore = 1;
 int progress[4] = {0, 0, 0, 0};
 const int progressEnd[4] = {spp, spp, spp, spp};
 
-std::vector<Object> objList;
+Object scene;
 std::vector<Triangle> lights;
 Camera cam(Vector3(0, -2.0, 0), resX, resY, 3.14 / 4.0, 1);
 BVH bvh;
@@ -201,25 +201,25 @@ int main()
 	//scene Data
 	Timer t{};
 
-	objList.push_back(Object(pathToFiles + "Cornell box_Monkey.obj"));
+	scene = Object(pathToFiles + "Cornell box_Monkey.obj");
 	printf("object Import Done\n");
 	//objList.push_back(Object("Cornell.obj"));
 	//objList.push_back(Object("Furnace.obj"));
 	//objList.push_back(Object("FurnaceHD.obj"));
 	//objList.push_back(Object("Grid.obj"));
 
-	for (auto it = objList.at(0).faces.begin(); it != objList.at(0).faces.end(); it++)
+	for (auto it = scene.faces.begin(); it != scene.faces.end(); it++)
 	{
-		if (objList.at(0).mat.at(it->material).emission)
+		if (scene.getMat(it->material)->type == "emissive")
 		{
 			lights.push_back(*it);
 		}
 	}
 
-	bvh = BVH(&objList.at(0).faces);
+	bvh = BVH(&scene.faces);
 	printf("BVH Done\n");
-	printf("tri count : %d / %d\n", bvh.triangleAmount(&bvh.NodeList.front()), objList.at(0).faces.size());
-	Engine engine(resX, resY, cam, objList.at(0), lights, maxBounce, bvh);
+	printf("tri count : %d / %d\n", bvh.triangleAmount(&bvh.NodeList.front()), scene.faces.size());
+	Engine engine(resX, resY, cam, scene, lights, maxBounce, bvh);
 
 	Image imgFinal(resX, resY);
 	printf("Engine init done\n");

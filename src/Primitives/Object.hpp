@@ -9,6 +9,7 @@
 #define OBJECT_HPP_
 
 #include <vector>
+#include <memory>
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -20,12 +21,13 @@ class Object
 {
 public:
 	std::vector<Triangle> faces;
-	std::vector<Material> mat;
+	std::vector<std::shared_ptr<Material>> mat;
 
 	Object();
 	Object(std::vector<Triangle> triArray);
 	Object(std::string file);
 
+	std::shared_ptr<Material> getMat(int index);
 	Object load(std::string filename);
 };
 

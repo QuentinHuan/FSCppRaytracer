@@ -13,7 +13,7 @@
 #include "HitInfo.hpp"
 #include <random>
 #include <cmath>
-
+#include <memory>
 #include "Timer.hpp"
 #include "Utility.hpp"
 #include "BVH.hpp"
@@ -35,7 +35,7 @@ private:
 
 	int resX, resY;
 
-	Material background;
+	std::shared_ptr<Material> background;
 	float backgroundPower = 0.0;
 
 	const float invPI = (1.0 / 3.14);
@@ -64,6 +64,8 @@ private:
 	Ray uniformInHemisphere(Vector3 direction, Vector3 position);
 	Vector3 uniformRndInTriangle(Triangle t);
 	float triangleViewAngle(Triangle t, Vector3 viewerPosition);
+
+	std::shared_ptr<Material> getMat(int index);
 
 public:
 	//fonctions------------------------------------------------

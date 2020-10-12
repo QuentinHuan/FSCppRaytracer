@@ -16,9 +16,14 @@ Engine::Engine(int resX, int resY, Camera &cam, Object obj, std::vector<Triangle
 	generator = std::default_random_engine();
 	distribution = std::uniform_real_distribution<float>(0, 1.0);
 	intUniformDistribution = std::uniform_int_distribution<int>(0, lightTriangleList.size() - 1);
-	background = Material(Color(1, 1, 1), true, backgroundPower);
+	background = obj.getMat(0);
 	cache.reserve(resX * resY);
 	buildCache(cam);
+}
+
+std::shared_ptr<Material> Engine::getMat(int index)
+{
+	return obj.getMat(index);
 }
 
 Ray Engine::shadowRay(HitInfo &hit)
@@ -44,7 +49,7 @@ Color Engine::render(int pixel)
 {
 	//return directLight(pixel);
 	//return globalIllumination(pixel);
-	return directLight(pixel) + globalIllumination(pixel) * obj.mat.at(cache.at(pixel).material).diffuse;
+	return directLight(pixel) + globalIllumination(pixel) * getMat(cache.at(pixel).material)->getBaseColor();
 }
 
 Color Engine::directLight(int pixel)
@@ -54,26 +59,24 @@ Color Engine::directLight(int pixel)
 
 	if (hit.hitSomething)
 	{
-		//diffuse
-		if (obj.mat.at(hit.material).emission == false)
+		//not emissive
+		if (getMat(hit.material)->type != "emissive")
 		{
-
 			Ray shadRay = shadowRay(hit);
 			HitInfo shadHit = intersect(shadRay);
 			if (shadHit.hitSomething)
 			{
-				if (obj.mat.at(shadHit.material).emission)
+				if (getMat(shadHit.material)->type == "emissive")
 				{
-					light = obj.mat.at(shadHit.material).diffuse * obj.mat.at(shadHit.material).emissionPower;
+					light = getMat(shadHit.material)->BRDF(shadHit.r.dir, shadHit.r.dir, shadHit.normal);
 					float nDotWi = std::abs(Vector3::dot(hit.normal, shadRay.dir));
-					Color BRDF = obj.mat.at(hit.material).BRDF(hit.r.dir * -1, shadRay.dir, hit.normal);
+					Color BRDF = getMat(hit.material)->BRDF(hit.r.dir * -1, shadRay.dir, hit.normal);
 
 					return light * shadRay.invPDF * BRDF * nDotWi; //direct light, no BRDF sampling
 																   //return Color(1, 1, 1) * BRDF;
 				}
 				else
 				{
-					//statCounter.addCriteriaTime(1,t.elapsed());
 					return Color();
 				}
 			}
@@ -85,15 +88,14 @@ Color Engine::directLight(int pixel)
 		//emissive
 		else
 		{
-			//statCounter.addCriteriaTime(1,t.elapsed());
-			return obj.mat.at(hit.material).diffuse * obj.mat.at(hit.material).emissionPower;
+			return getMat(hit.material)->BRDF(Vector3(), Vector3(), Vector3());
 		}
 	}
 	//background
 	else
 	{
 		//statCounter.addCriteriaTime(1,t.elapsed());
-		return background.diffuse * backgroundPower;
+		return background->BRDF(Vector3(), Vector3(), Vector3());
 	}
 }
 
@@ -103,7 +105,7 @@ Color Engine::globalIllumination(int pixel)
 
 	if (hit.hitSomething)
 	{
-		if (obj.mat.at(hit.material).emission)
+		if (getMat(hit.material)->type == "emissive")
 			return Color();
 		else //diff
 			return GIBounce(hit);
@@ -112,7 +114,6 @@ Color Engine::globalIllumination(int pixel)
 	{
 		return Color();
 	}
-	return Color();
 }
 
 Color Engine::GIBounce(HitInfo &hit)
@@ -128,21 +129,21 @@ Color Engine::GIBounce(HitInfo &hit)
 	{
 		if (bounce == 1)
 		{
-			giRay = obj.mat.at(hit.material).sampleBRDF(hit.normal, hit.r.dir, hit.calcIntersectionCoord() + hit.normal * selfIntersectionThreshold, generator, distribution);
+			giRay = getMat(hit.material)->sampleBRDF(hit.normal, hit.r.dir, hit.calcIntersectionCoord() + hit.normal * selfIntersectionThreshold, generator, distribution);
 			GIHit = intersect(giRay);
 		}
 
 		if (GIHit.hitSomething)
 		{
-			giRay2 = obj.mat.at(GIHit.material).sampleBRDF(GIHit.normal, GIHit.r.dir, GIHit.calcIntersectionCoord() + GIHit.normal * selfIntersectionThreshold, generator, distribution);
+			giRay2 = getMat(GIHit.material)->sampleBRDF(GIHit.normal, GIHit.r.dir, GIHit.calcIntersectionCoord() + GIHit.normal * selfIntersectionThreshold, generator, distribution);
 			//next Ray
 			GIHit2 = intersect(giRay2);
 			float nDotWi = std::max(Vector3::dot(GIHit.normal, GIHit2.r.dir), 0.0f);
-			if (obj.mat.at(GIHit.material).emission) //light
+			if (getMat(GIHit.material)->type == "emissive") //light
 			{
 				if (bounce != 1)
 				{
-					Color BRDF = obj.mat.at(GIHit.material).diffuse * obj.mat.at(GIHit.material).emissionPower;
+					Color BRDF = getMat(GIHit.material)->BRDF(GIHit.r.dir, GIHit.r.dir, GIHit.normal);
 					final = final * BRDF;
 					hitLightSource = true;
 				}
@@ -150,11 +151,37 @@ Color Engine::GIBounce(HitInfo &hit)
 			}
 			else //other material
 			{
-				Color BRDF = obj.mat.at(GIHit.material).BRDF(GIHit.r.dir, GIHit2.r.dir, GIHit.normal);
-				final = final * BRDF * GIHit2.r.invPDF * nDotWi;
+				Color BRDF = getMat(GIHit.material)->BRDF(GIHit.r.dir, GIHit2.r.dir, GIHit.normal);
+				//final = final * BRDF * GIHit2.r.invPDF * nDotWi;
+				if (!hitLightSource)
+				{
+					Ray shadRay = shadowRay(GIHit);
+					HitInfo shadHit = intersect(shadRay);
+					if (shadHit.hitSomething)
+					{
+						if (getMat(shadHit.material)->type == "emissive")
+						{
+							nDotWi = std::max(Vector3::dot(GIHit.normal, shadRay.dir), 0.0f);
+							final = final * BRDF * getMat(shadHit.material)->BRDF(shadHit.r.dir, shadHit.r.dir, shadHit.normal) * (shadRay.invPDF);
+							hitLightSource = true;
+							break;
+						}
+						else
+						{
+							if (bounce == maxBounce)
+								return Color(0, 0, 0);
+						}
+					}
+					else
+					{
+						if (bounce == maxBounce)
+							return Color(0, 0, 0);
+					}
+				}
+
 				if (bounce == maxBounce)
 				{
-					final = final * background.diffuse * background.emissionPower;
+					final = final * background->BRDF(GIHit.r.dir, GIHit.r.dir, GIHit.normal);
 					hitLightSource = true;
 					break;
 				}
@@ -162,36 +189,11 @@ Color Engine::GIBounce(HitInfo &hit)
 		}
 		else //background
 		{
-			final = final * background.diffuse * background.emissionPower;
+			final = final * background->BRDF(GIHit.r.dir, GIHit.r.dir, GIHit.normal);
 			hitLightSource = true;
 			break;
 		}
 
-		if (!hitLightSource)
-		{
-			Ray shadRay = shadowRay(GIHit);
-			HitInfo shadHit = intersect(shadRay);
-			if (shadHit.hitSomething)
-			{
-				if (obj.mat.at(shadHit.material).emission)
-				{
-
-					final = final * obj.mat.at(shadHit.material).diffuse * obj.mat.at(shadHit.material).emissionPower * (shadRay.invPDF);
-					hitLightSource = true;
-					break;
-				}
-				else
-				{
-					if (bounce == maxBounce)
-						return Color(0, 0, 0);
-				}
-			}
-			else
-			{
-				if (bounce == maxBounce)
-					return Color(0, 0, 0);
-			}
-		}
 		hit = GIHit;
 		GIHit = GIHit2;
 		giRay = giRay2;
